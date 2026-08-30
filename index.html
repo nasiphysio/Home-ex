@@ -463,7 +463,8 @@
     $("loginNotice").innerHTML="";
     try{
       await signInWithEmailAndPassword(auth,$("loginEmail").value.trim(),$("loginPassword").value);
-      $("loginModal").classList.add("hidden");
+      // Authentication state listener below will verify the admin role
+      // and open the Admin panel automatically.
     }catch(e){
       $("loginNotice").innerHTML=`<div class="notice error">Login failed: ${escapeHtml(e.message)}</div>`;
     }
@@ -514,7 +515,17 @@
   onAuthStateChanged(auth, async user=>{
     currentUser=user;
     isAdmin=await checkAdmin(user);
-    if(user && isAdmin) { /* admin available */ }
+
+    if(user){
+      if(isAdmin){
+        $("loginModal").classList.add("hidden");
+        switchTab("adminTab");
+        renderAdmin();
+      }else{
+        $("loginNotice").innerHTML=`<div class="notice error">This account is logged in, but it is not marked as admin in Firestore.</div>`;
+        $("loginModal").classList.remove("hidden");
+      }
+    }
   });
 
   loadExercises();
