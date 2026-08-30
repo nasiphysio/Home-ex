@@ -46,7 +46,7 @@
   label{ display:block; font-size:13.5px; font-weight:600; color:var(--ink); margin-bottom:6px; }
   input[type=text], input[type=number], input[type=url], input[type=password], select, textarea{
     width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:9px;
-    font-family:inherit; font-size:14.5px; color:var(--ink); background:#FCFBF8; transition:.15s;
+    font-family:inherit; font-size:16px; color:var(--ink); background:#FCFBF8; transition:.15s;
   }
   textarea{ resize:vertical; min-height:64px; }
   input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--primary); background:#fff; }
@@ -110,7 +110,7 @@
   .ex-desc{ font-size:12.5px; color:var(--ink-soft); margin:0 0 4px; }
   .ex-sets{ font-size:12px; color:var(--accent); font-weight:700; }
   .ex-video{ display:inline-block; margin-top:5px; font-size:11.5px; color:var(--primary); font-weight:700; text-decoration:none; }
-  .fav-star{ position:absolute; top:10px; left:10px; width:22px; height:22px; cursor:pointer; }
+  .fav-star{ flex-shrink:0; width:22px; height:22px; cursor:pointer; }
   .fav-star svg{ width:100%; height:100%; fill:none; stroke:var(--accent); stroke-width:1.8; }
   .fav-star.active svg{ fill:var(--accent); }
 
@@ -367,18 +367,15 @@
     <div class="field"><label>وصف التمرين (يظهر للمريض في الـ PDF)</label><textarea id="afDesc"></textarea></div>
     <div class="grid2">
       <div class="field"><label>عدد المجموعات والتكرارات (اختياري)</label><input type="text" id="afSets" placeholder="مثال: ٣ × ١٢"></div>
-      <div class="field"><label>رابط الفيديو (اختياري)</label><input type="url" id="afVideo" placeholder="https://youtube.com/..."></div>
+      <div class="field"><label>رابط الفيديو (يوتيوب أو فيميو — اختياري)</label><input type="url" id="afVideo" placeholder="https://youtube.com/..."></div>
     </div>
     <div class="field"><label>الأداء الصحيح (تفاصيل إكلينيكية للدكتور فقط)</label><textarea id="afCorrect"></textarea></div>
     <div class="field"><label>الأخطاء الشائعة</label><textarea id="afMistakes"></textarea></div>
     <div class="field"><label>متى يكون ممنوع / علامات الخطر</label><textarea id="afContra"></textarea></div>
     <div class="field">
-      <label>صور التمرين — روابط جوجل درايف (تقدر تضيف أكتر من صورة)</label>
-      <div style="display:flex; gap:8px;">
-        <input type="url" id="afImageLink" placeholder="https://drive.google.com/file/d/....">
-        <button class="btn btn-ghost btn-sm" id="afAddImage" type="button" style="white-space:nowrap;">+ إضافة صورة</button>
-      </div>
-      <p class="hint">الصق لينك المشاركة من جوجل درايف (تأكد إن الإعدادات "أي شخص لديه الرابط")، دوس "إضافة صورة"، وكرر لأي صورة تانية — مفيد إنك تضيف صورة لوضع البداية وصورة لوضع النهاية مثلاً.</p>
+      <label>صور التمرين (تقدر ترفع أكتر من صورة)</label>
+      <label class="logo-upload" id="afImageUploadBox"><span id="afImageUploadText">اضغط لرفع صورة أو أكتر من الجهاز</span><input type="file" accept="image/*" multiple id="afImageFileInput" class="hidden"></label>
+      <p class="hint">الرفع المباشر من الجهاز أضمن بكتير من روابط جوجل درايف (اللي بتترفض كتير من جوجل). الصور بتتصغّر تلقائياً عشان الحفظ يبقى أسرع.</p>
       <div id="afImageList" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
     </div>
     <div class="actions">
@@ -772,12 +769,32 @@ async function loadStorage(){
 async function saveExercises(){ try{ await window.storage.set('pt-exercises', JSON.stringify(EXERCISES), false); }catch(e){} }
 async function saveFavorites(){ try{ await window.storage.set('pt-favorite-ids', JSON.stringify([...favorites]), false); }catch(e){} }
 
-/* Convert a Google Drive share link into a directly-viewable image URL */
-function driveDirectLink(url){
-  if(!url) return null;
-  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if(m && m[1]) return 'https://drive.google.com/uc?export=view&id=' + m[1];
-  return url;
+/* Ensure a URL has a protocol prefix so links actually open instead of failing silently */
+function normalizeUrl(url){
+  if(!url) return '';
+  return /^https?:\/\//i.test(url) ? url : ('https://' + url);
+}
+function resizeImageFile(file, maxDim, quality){
+  maxDim = maxDim || 900; quality = quality || 0.75;
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w > h){ if(w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; } }
+        else { if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; } }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>reject(new Error('image load failed'));
+      img.src = e.target.result;
+    };
+    reader.onerror = ()=>reject(new Error('file read failed'));
+    reader.readAsDataURL(file);
+  });
 }
 
 /* ================= Step navigation ================= */
@@ -1011,8 +1028,17 @@ document.getElementById('sendWhatsapp').addEventListener('click', async ()=>{
   const patient = document.getElementById('patientName').value.trim() || 'المريض';
   const dv = document.getElementById('durationValue').value.trim();
   const du = document.getElementById('durationUnit').value;
-  const names = EXERCISES.filter(e=>selectedExercises.has(e.id)).map(e=>'- '+e.name).join('\n');
-  const msg = 'برنامج تمارين للمريض: '+patient+(dv?('\nالمدة: '+dv+' '+du):'')+'\n\nالتمارين:\n'+names+'\n\n(مرفق ملف الـ PDF بالتفاصيل الكاملة — تم تنزيله الآن)';
+  const chosen = EXERCISES.filter(e=>selectedExercises.has(e.id));
+  const details = chosen.map((e,i)=>{
+    let line = (i+1)+'. '+e.name+(e.nameEn?' ('+e.nameEn+')':'');
+    if(e.sets) line += '\n   ' + e.sets;
+    const tip = shortTip(e.correct);
+    if(tip) line += '\n   💡 ' + tip;
+    if(e.video) line += '\n   🎬 ' + e.video;
+    return line;
+  }).join('\n\n');
+  let msg = 'برنامج تمارين للمريض: '+patient+(dv?('\nالمدة: '+dv+' '+du):'')+'\n\nالتمارين:\n\n'+details+'\n\n📎 ملف الـ PDF بالصور والتفاصيل الكاملة اتحمّل دلوقتي — أرفقه هنا يدوياً (واتساب مش بيسمح بإرفاق ملفات أو صور تلقائي من صفحة ويب).';
+  if(msg.length > 3500) msg = msg.slice(0, 3480) + '\n\n(باقي التفاصيل في ملف الـ PDF المرفق)';
   window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
   btn.textContent = original; btn.disabled = false;
 });
@@ -1055,7 +1081,6 @@ function resetAdminForm(){
   document.getElementById('afDesc').value = '';
   document.getElementById('afSets').value = '';
   document.getElementById('afVideo').value = '';
-  document.getElementById('afImageLink').value = '';
   renderAfImageList();
   document.getElementById('afCorrect').value = '';
   document.getElementById('afMistakes').value = '';
@@ -1076,12 +1101,14 @@ function renderAfImageList(){
     wrap.appendChild(chip);
   });
 }
-document.getElementById('afAddImage').addEventListener('click', ()=>{
-  const raw = document.getElementById('afImageLink').value.trim();
-  if(!raw) return;
-  afImages.push(driveDirectLink(raw));
-  document.getElementById('afImageLink').value = '';
-  renderAfImageList();
+document.getElementById('afImageUploadBox').addEventListener('click', ()=>document.getElementById('afImageFileInput').click());
+document.getElementById('afImageFileInput').addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  for(const file of files){
+    try{ const url = await resizeImageFile(file); afImages.push(url); renderAfImageList(); }
+    catch(err){ /* skip file that failed to load */ }
+  }
+  e.target.value = '';
 });
 document.getElementById('afCancelEdit').addEventListener('click', resetAdminForm);
 
@@ -1094,7 +1121,7 @@ document.getElementById('afSubmit').addEventListener('click', async ()=>{
     region: document.getElementById('afRegion').value,
     name: name, nameEn: document.getElementById('afNameEn').value.trim(), desc: desc,
     sets: document.getElementById('afSets').value.trim(),
-    video: document.getElementById('afVideo').value.trim(),
+    video: normalizeUrl(document.getElementById('afVideo').value.trim()),
     images: afImages.slice(),
     correct: document.getElementById('afCorrect').value.trim(),
     mistakes: document.getElementById('afMistakes').value.trim(),
@@ -1132,7 +1159,6 @@ function renderAdminList(){
       document.getElementById('afDesc').value = ex.desc;
       document.getElementById('afSets').value = ex.sets || '';
       document.getElementById('afVideo').value = ex.video || '';
-      document.getElementById('afImageLink').value = '';
       afImages = (ex.images || []).slice();
       renderAfImageList();
       document.getElementById('afCorrect').value = ex.correct || '';
