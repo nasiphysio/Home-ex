@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أداة بناء برنامج التمارين | علاج طبيعي عظام</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Markazi+Text:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F6F4EE; --panel:#FFFFFF; --ink:#202D2A; --ink-soft:#5B685F;
+    --primary:#2F5D50; --primary-dark:#20423A; --accent:#B8823D; --accent-soft:#EFDFC1;
+    --line:#D8DCD2; --danger:#A6473A; --whatsapp:#3E8E5A; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans Arabic', sans-serif; line-height:1.6; min-height:100vh; }
+  .display{ font-family:'Markazi Text', serif; }
+  .shell{ max-width:1080px; margin:0 auto; padding:28px 20px 60px; }
+
+  header.top{ display:flex; align-items:center; justify-content:space-between; padding-bottom:22px; margin-bottom:26px; border-bottom:1px solid var(--line); gap:14px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{ width:46px; height:46px; border-radius:12px; background:linear-gradient(150deg, var(--primary), var(--primary-dark)); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 3px 10px rgba(47,93,80,.3); }
+  .brand-mark svg{ width:24px; height:24px; }
+  .brand h1{ font-family:'Markazi Text', serif; font-weight:600; font-size:27px; margin:0; color:var(--primary-dark); letter-spacing:.2px; }
+  .brand p{ margin:0; font-size:13px; color:var(--ink-soft); }
+  .admin-link{ font-size:13px; font-weight:700; color:var(--ink-soft); border:1.5px solid var(--line); border-radius:8px; padding:8px 14px; cursor:pointer; background:#fff; display:flex; align-items:center; gap:6px; transition:.15s; }
+  .admin-link:hover{ border-color:var(--primary); color:var(--primary); }
+
+  .tabbar{ display:flex; gap:4px; background:#EAE7DD; border-radius:14px; padding:5px; margin-bottom:26px; }
+  .tab-btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:12px 10px; border:none; background:transparent; border-radius:10px; font-family:inherit; font-size:14.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; transition:.2s cubic-bezier(.4,0,.2,1); }
+  .tab-ico{ font-size:16px; }
+  .tab-btn:hover{ color:var(--primary-dark); }
+  .tab-btn.active{ background:#fff; color:var(--primary-dark); box-shadow:0 3px 10px rgba(32,45,42,.12); }
+  @media(max-width:480px){ .tab-btn{ font-size:13px; padding:11px 6px; } }
+
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:28px; animation:fade .35s ease; box-shadow:0 4px 24px rgba(32,45,42,.06), 0 1px 3px rgba(32,45,42,.04); }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+  .panel h2{ font-family:'Markazi Text', serif; font-size:24px; margin:0 0 4px; color:var(--primary-dark); }
+  .panel .sub{ font-size:13.5px; color:var(--ink-soft); margin:0 0 24px; }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media(max-width:640px){ .grid2{ grid-template-columns:1fr; } }
+  label{ display:block; font-size:13.5px; font-weight:600; color:var(--ink); margin-bottom:6px; }
+  input[type=text], input[type=number], input[type=url], input[type=password], select, textarea{
+    width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:9px;
+    font-family:inherit; font-size:14.5px; color:var(--ink); background:#FCFBF8; transition:.15s;
+  }
+  textarea{ resize:vertical; min-height:64px; }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--primary); background:#fff; }
+  .field{ margin-bottom:16px; }
+  .hint{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; }
+  .duration-row{ display:flex; gap:10px; }
+  .duration-row input{ flex:1; }
+  .duration-row select{ flex:1; }
+
+  .logo-upload{ border:1.5px dashed var(--line); border-radius:10px; padding:14px; text-align:center; font-size:13px; color:var(--ink-soft); cursor:pointer; background:#FCFBF8; }
+  .logo-upload img{ max-height:50px; margin-bottom:6px; border-radius:6px; }
+
+  .btn{ display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:10px; font-weight:700; font-size:14.5px; cursor:pointer; border:none; font-family:inherit; transition:.18s cubic-bezier(.4,0,.2,1); }
+  .btn-primary{ background:var(--primary); color:#fff; box-shadow:0 2px 8px rgba(47,93,80,.25); }
+  .btn-primary:hover{ background:var(--primary-dark); transform:translateY(-1px); box-shadow:0 4px 14px rgba(47,93,80,.3); }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1.5px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--primary); color:var(--primary); transform:translateY(-1px); }
+  .btn-whatsapp{ background:var(--whatsapp); color:#fff; box-shadow:0 2px 8px rgba(62,142,90,.25); }
+  .btn-whatsapp:hover{ background:#316f46; transform:translateY(-1px); box-shadow:0 4px 14px rgba(62,142,90,.3); }
+  .btn-danger{ background:transparent; color:var(--danger); border:1.5px solid var(--danger); padding:7px 12px; font-size:12.5px; }
+  .btn-sm{ padding:7px 12px; font-size:12.5px; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .actions{ display:flex; justify-content:space-between; margin-top:28px; gap:10px; flex-wrap:wrap; }
+
+  .step2-layout{ display:grid; grid-template-columns:230px 1fr; gap:26px; }
+  @media(max-width:760px){ .step2-layout{ grid-template-columns:1fr; } }
+  .bodymap-wrap{ text-align:center; background:linear-gradient(180deg,#FBFAF6,#F3F1EA); border:1px solid var(--line); border-radius:14px; padding:18px 14px; }
+  .bodymap-wrap svg{ width:100%; max-width:210px; filter:drop-shadow(0 2px 4px rgba(32,45,42,.06)); }
+  .hotspot{ fill:transparent; cursor:pointer; transition:.15s; }
+  .hotspot:hover{ fill:var(--accent-soft); }
+  .hotspot.active{ fill:var(--accent-soft); stroke:var(--accent); stroke-width:2.2; }
+  .body-outline{ fill:url(#skinGrad); stroke:#8B6239; stroke-width:1.1; stroke-linejoin:round; }
+  .anat-detail{ fill:none; stroke:#8B6239; stroke-width:.9; opacity:.35; stroke-linecap:round; }
+  .region-legend{ margin-top:16px; display:flex; flex-direction:column; gap:7px; text-align:right; }
+  .region-chip{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 13px; border-radius:9px; font-size:13.5px; cursor:pointer; border:1.5px solid var(--line); color:var(--ink-soft); font-weight:600; transition:.15s; background:#fff; }
+  .region-chip:hover{ border-color:var(--accent); transform:translateX(-1px); }
+  .region-chip.active{ background:var(--primary); border-color:var(--primary); color:#fff; box-shadow:0 2px 8px rgba(47,93,80,.22); }
+  .region-chip.fav.active{ background:var(--accent); border-color:var(--accent); box-shadow:0 2px 8px rgba(184,130,61,.25); }
+  .region-chip .cnt{ font-size:12px; opacity:.75; }
+
+  .search-box{ position:relative; margin-bottom:14px; }
+  .search-box input{ padding-right:38px; }
+  .search-box svg{ position:absolute; right:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; stroke:var(--ink-soft); }
+
+  .ex-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .ex-toolbar .count{ font-size:13.5px; color:var(--ink-soft); }
+  .ex-toolbar .count b{ color:var(--primary-dark); }
+
+  .ex-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:640px){ .ex-grid{ grid-template-columns:1fr; } }
+  .ex-card{ position:relative; border:1.5px solid var(--line); border-radius:13px; padding:14px 16px; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:.18s cubic-bezier(.4,0,.2,1); background:#FCFBF8; }
+  .ex-card:hover{ border-color:var(--accent); box-shadow:0 6px 16px rgba(32,45,42,.08); transform:translateY(-1px); }
+  .ex-card.selected{ border-color:var(--primary); background:#F1F6F3; box-shadow:0 3px 10px rgba(47,93,80,.1); }
+  .ex-thumb{ width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0; background:var(--accent-soft); }
+  .ex-thumb-placeholder{ width:44px; height:44px; border-radius:8px; flex-shrink:0; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .ex-check{ width:20px; height:20px; border-radius:6px; border:2px solid var(--line); flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; transition:.15s; }
+  .ex-card.selected .ex-check{ background:var(--primary); border-color:var(--primary); }
+  .ex-check svg{ width:12px; height:12px; opacity:0; }
+  .ex-card.selected .ex-check svg{ opacity:1; }
+  .ex-name{ font-weight:700; font-size:14.5px; margin:0 0 3px; }
+  .ex-desc{ font-size:12.5px; color:var(--ink-soft); margin:0 0 4px; }
+  .ex-sets{ font-size:12px; color:var(--accent); font-weight:700; }
+  .ex-video{ display:inline-block; margin-top:5px; font-size:11.5px; color:var(--primary); font-weight:700; text-decoration:none; }
+  .fav-star{ position:absolute; top:10px; left:10px; width:22px; height:22px; cursor:pointer; }
+  .fav-star svg{ width:100%; height:100%; fill:none; stroke:var(--accent); stroke-width:1.8; }
+  .fav-star.active svg{ fill:var(--accent); }
+
+  #reviewCard{ background:#fff; border-radius:10px; }
+  .rc-head{ display:flex; justify-content:space-between; align-items:center; gap:14px; padding-bottom:18px; margin-bottom:20px; border-bottom:2px solid var(--primary); }
+  .rc-clinic h3{ font-family:'Markazi Text', serif; font-size:22px; margin:0; color:var(--primary-dark); }
+  .rc-clinic p{ margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); }
+  .rc-logo img{ max-height:46px; border-radius:6px; }
+  .rc-info{ display:grid; grid-template-columns:1fr 1fr; gap:10px 26px; margin-bottom:22px; font-size:13.5px; }
+  .rc-info div span{ display:block; color:var(--ink-soft); font-size:11.5px; margin-bottom:2px; }
+  .rc-info div b{ font-size:14.5px; }
+  .rc-list-title{ font-family:'Markazi Text', serif; font-size:19px; color:var(--primary-dark); margin:0 0 12px; }
+  .rc-ex{ display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .rc-ex:last-child{ border-bottom:none; }
+  .rc-ex img{ width:40px; height:40px; border-radius:7px; object-fit:cover; flex-shrink:0; }
+  .rc-ex .idx{ width:26px; height:26px; border-radius:50%; background:var(--accent-soft); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px; flex-shrink:0; }
+  .rc-ex .name{ font-weight:700; font-size:14px; margin:0 0 2px; }
+  .rc-ex .desc{ font-size:12.5px; color:var(--ink-soft); margin:0 0 3px; }
+  .rc-ex .sets{ font-size:12px; color:var(--accent); font-weight:700; }
+  .rc-ex .rc-tip{ font-size:11.5px; color:var(--primary-dark); background:#F1F6F3; border-radius:6px; padding:5px 8px; margin:5px 0 0; display:inline-block; }
+  .rc-footer{ margin-top:22px; padding-top:14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); text-align:center; }
+  .whatsapp-note{ font-size:12px; color:var(--ink-soft); margin-top:8px; }
+
+  .empty-note{ text-align:center; color:var(--ink-soft); font-size:13.5px; padding:20px 0; }
+  .hidden{ display:none !important; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(32,45,42,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
+  .modal{ background:#fff; border-radius:14px; padding:26px; max-width:380px; width:100%; }
+  .modal h3{ font-family:'Markazi Text', serif; font-size:22px; margin:0 0 4px; color:var(--primary-dark); }
+  .modal .sub{ font-size:13px; color:var(--ink-soft); margin:0 0 18px; }
+  .modal-err{ font-size:12.5px; color:var(--danger); margin-top:6px; min-height:16px; }
+
+  .admin-shell{ max-width:1080px; margin:0 auto; padding:28px 20px 60px; }
+  .admin-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .admin-header h2{ font-family:'Markazi Text', serif; font-size:26px; margin:0; color:var(--primary-dark); }
+  .badge{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px; }
+  .badge.base{ background:#E6E9E3; color:var(--ink-soft); }
+  .badge.custom{ background:var(--accent-soft); color:var(--primary-dark); }
+  .admin-row{ display:flex; align-items:center; gap:12px; padding:12px 8px; border-bottom:1px solid var(--line); }
+  .admin-row img, .admin-row .ex-thumb-placeholder{ width:38px; height:38px; }
+  .admin-row .info{ flex:1; }
+  .admin-row .info b{ font-size:14px; display:block; }
+  .admin-row .info span{ font-size:12px; color:var(--ink-soft); }
+  .admin-actions-row{ display:flex; gap:8px; }
+
+  /* ===== Clinical info toggle ===== */
+  .ex-name-row{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+  .ex-name-en{ font-size:11px; color:var(--ink-soft); font-style:italic; }
+  .info-toggle{ font-size:11px; color:var(--primary); font-weight:700; cursor:pointer; margin-top:5px; display:inline-block; text-decoration:underline; }
+  .clinical-box{ margin-top:8px; padding:10px 12px; background:#F3F1EA; border-radius:8px; font-size:12px; }
+  .clinical-box p{ margin:0 0 6px; }
+  .clinical-box b{ color:var(--primary-dark); }
+  .clinical-box .contra{ color:var(--danger); }
+  .clinical-box .contra b{ color:var(--danger); }
+
+  /* ===== Print ===== */
+  @media print{
+    body{ background:#fff; }
+    header.top, .tabbar, #panel1, #panel2, .actions, .whatsapp-note, #adminShell, .overlay{ display:none !important; }
+    #panel3{ display:block !important; border:none; box-shadow:none; padding:0; }
+    #panel3 h2, #panel3 .sub{ display:none; }
+    .shell{ max-width:100%; padding:0; }
+    #reviewCard{ border:none !important; padding:0 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="shell" id="mainShell">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="2.4"/><path d="M12 7.4v6.4M8 10h8M9 21l3-7 3 7"/>
+        </svg>
+      </div>
+      <div>
+        <h1>باني برنامج التمارين</h1>
+        <p>علاج طبيعي عظام — برنامج تمارين مخصص لكل مريض</p>
+      </div>
+    </div>
+    <div class="admin-link" id="openAdminBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      لوحة التحكم
+    </div>
+  </header>
+
+  <div class="tabbar" id="tabbar">
+    <button class="tab-btn active" id="tabBtn1" data-tab="1"><span class="tab-ico">👤</span> Patient</button>
+    <button class="tab-btn" id="tabBtn2" data-tab="2"><span class="tab-ico">🏋️</span> Exercises</button>
+    <button class="tab-btn" id="tabBtn3" data-tab="3"><span class="tab-ico">📤</span> Send</button>
+  </div>
+
+  <section class="panel" id="panel1">
+    <h2>بيانات البرنامج</h2>
+    <p class="sub">كل الحقول هنا اختيارية — البيانات هتظهر في أعلى ملف الـ PDF لو اتملت</p>
+    <div class="grid2">
+      <div class="field"><label>اسم الدكتور (اختياري)</label><input type="text" id="doctorName" placeholder="مثال: د. أحمد سامي"></div>
+      <div class="field"><label>اسم العيادة / المركز (اختياري)</label><input type="text" id="clinicName" placeholder="مثال: عيادة الحركة للعلاج الطبيعي"></div>
+      <div class="field"><label>اسم المريض (اختياري)</label><input type="text" id="patientName" placeholder="مثال: محمد علي"></div>
+      <div class="field">
+        <label>مدة البرنامج (اختياري)</label>
+        <div class="duration-row">
+          <input type="number" id="durationValue" placeholder="٤" min="1">
+          <select id="durationUnit"><option value="أيام">أيام</option><option value="أسابيع" selected>أسابيع</option><option value="أشهر">أشهر</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="field" style="max-width:340px">
+      <label>شعار العيادة (اختياري)</label>
+      <label class="logo-upload" id="logoUploadBox">
+        <span id="logoUploadText">اضغط لرفع صورة الشعار</span>
+        <input type="file" accept="image/*" id="logoInput" class="hidden">
+      </label>
+    </div>
+    <div class="actions"><span></span><button class="btn btn-primary" id="toStep2">التالي: اختيار التمارين ←</button></div>
+  </section>
+
+  <section class="panel hidden" id="panel2">
+    <h2>اختيار التمارين</h2>
+    <p class="sub">دوس على منطقة في الجسم، ابحث بالاسم، أو استخدم المفضلة</p>
+    <div class="step2-layout">
+      <div class="bodymap-wrap">
+        <svg viewBox="0 0 200 340">
+          <defs>
+            <radialGradient id="skinGrad" cx="38%" cy="25%" r="85%">
+              <stop offset="0%" stop-color="#EDD2B0"/>
+              <stop offset="55%" stop-color="#D7AD82"/>
+              <stop offset="100%" stop-color="#B58A5E"/>
+            </radialGradient>
+          </defs>
+          <ellipse class="body-outline" cx="100" cy="27" rx="18" ry="21"/>
+          <path class="body-outline" d="M93,44 L107,44 L110,58 L90,58 Z"/>
+          <path class="body-outline" d="M63,60 C76,53 90,49 100,49 C110,49 124,53 137,60 C142,74 136,90 124,101 C133,113 140,131 134,149 L66,149 C60,131 67,113 76,101 C64,90 58,74 63,60 Z"/>
+          <path class="body-outline" d="M40,63 C38,88 39,118 43,146 Q43.5,150 48,150 L52,150 Q56.5,150 57,146 C60,118 60.5,88 59,63 Q59,59 49.5,59 Q40,59 40,63 Z"/>
+          <path class="body-outline" d="M160,63 C162,88 161,118 157,146 Q156.5,150 152,150 L148,150 Q143.5,150 143,146 C140,118 139.5,88 141,63 Q141,59 150.5,59 Q160,59 160,63 Z"/>
+          <path class="body-outline" d="M67,149 C65,172 66,196 70,211 Q70.5,214 75,214 L84,214 Q88.5,214 89,211 C92,196 93,172 91,149 Z"/>
+          <path class="body-outline" d="M133,149 C135,172 134,196 130,211 Q129.5,214 125,214 L116,214 Q111.5,214 111,211 C108,196 107,172 109,149 Z"/>
+          <path class="body-outline" d="M68,215 C65,238 67,266 72,289 Q72.5,292 76,292 L81,292 Q84.5,292 85,289 C89,266 91,238 90,215 Z"/>
+          <path class="body-outline" d="M132,215 C135,238 133,266 128,289 Q127.5,292 124,292 L119,292 Q115.5,292 115,289 C111,266 109,238 110,215 Z"/>
+          <ellipse class="body-outline" cx="78" cy="301" rx="16" ry="9" transform="rotate(-9 78 301)"/>
+          <ellipse class="body-outline" cx="122" cy="301" rx="16" ry="9" transform="rotate(9 122 301)"/>
+
+          <!-- anatomical shading details for a more lifelike (not schematic) look -->
+          <path class="anat-detail" d="M76,68 Q100,76 124,68"/>
+          <path class="anat-detail" d="M100,78 L100,96"/>
+          <path class="anat-detail" d="M84,104 Q100,108 116,104"/>
+          <path class="anat-detail" d="M100,104 L100,140"/>
+          <path class="anat-detail" d="M78,140 Q100,146 122,140"/>
+          <path class="anat-detail" d="M48,95 Q52,110 50,135"/>
+          <path class="anat-detail" d="M152,95 Q148,110 150,135"/>
+          <path class="anat-detail" d="M69,213 Q78,217 87,213"/>
+          <path class="anat-detail" d="M113,213 Q122,217 131,213"/>
+
+          <rect class="hotspot" data-region="neck" x="80" y="38" width="40" height="24" rx="10"/>
+          <circle class="hotspot" data-region="shoulder" cx="51" cy="68" r="17"/>
+          <circle class="hotspot" data-region="shoulder" cx="149" cy="68" r="17"/>
+          <rect class="hotspot" data-region="back" x="62" y="92" width="76" height="52" rx="14"/>
+          <rect class="hotspot" data-region="hip" x="62" y="147" width="76" height="30" rx="12"/>
+          <circle class="hotspot" data-region="knee" cx="78" cy="213" r="16"/>
+          <circle class="hotspot" data-region="knee" cx="122" cy="213" r="16"/>
+          <circle class="hotspot" data-region="ankle" cx="78" cy="299" r="16"/>
+          <circle class="hotspot" data-region="ankle" cx="122" cy="299" r="16"/>
+        </svg>
+        <div class="region-legend" id="regionLegend"></div>
+      </div>
+      <div>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="ابحث باسم التمرين...">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </div>
+        <div class="ex-toolbar"><span class="count">التمارين المختارة: <b id="selCount">٠</b></span></div>
+        <div class="ex-grid" id="exGrid"></div>
+        <div class="empty-note hidden" id="exEmpty">مفيش تمارين مطابقة</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="toStep1">→ رجوع</button>
+      <button class="btn btn-primary" id="toStep3" disabled>التالي: المراجعة ←</button>
+    </div>
+  </section>
+
+  <section class="panel hidden" id="panel3">
+    <h2>المراجعة والتحميل</h2>
+    <p class="sub">تأكد من البيانات قبل تحميل ملف الـ PDF أو إرساله عبر واتساب</p>
+    <div id="reviewCard" style="padding:26px; border:1px solid var(--line);">
+      <div class="rc-head">
+        <div class="rc-clinic"><h3 id="rcClinic">برنامج تمارين</h3><p id="rcDoctor"></p></div>
+        <div class="rc-logo" id="rcLogo"></div>
+      </div>
+      <div class="rc-info">
+        <div><span>اسم المريض</span><b id="rcPatient">—</b></div>
+        <div><span>مدة البرنامج</span><b id="rcDuration">—</b></div>
+      </div>
+      <p class="rc-list-title">التمارين الموصوفة</p>
+      <div id="rcExList"></div>
+      <div class="rc-footer">تم إعداد هذا البرنامج خصيصاً لك — يُرجى الالتزام بالتكرارات والمجموعات الموضحة أعلاه</div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="toStep2b">→ رجوع للتعديل</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="printPdf">طباعة / حفظ PDF (الأفضل مع الصور)</button>
+        <button class="btn btn-whatsapp" id="sendWhatsapp">إرسال عبر واتساب</button>
+        <button class="btn btn-primary" id="downloadPdf">تحميل سريع PDF ↓</button>
+      </div>
+    </div>
+    <p class="whatsapp-note">طباعة / حفظ PDF بتفتح نافذة طباعة المتصفح — اختر "Save as PDF" وهتطلع الصور مضمونة مهما كان مصدرها. أما "تحميل سريع" فهو أسهل وأسرع لكن الصور من جوجل درايف ممكن ماتظهرش فيه أحياناً. وواتساب بيحمّل نفس الملف السريع ويفتح محادثة برسالة جاهزة — تقدر ترفق الملف يدوياً.</p>
+  </section>
+</div>
+
+<!-- Admin login modal -->
+<div class="overlay hidden" id="adminLoginOverlay">
+  <div class="modal">
+    <h3>دخول لوحة التحكم</h3>
+    <p class="sub">لإضافة أو تعديل التمارين المتاحة</p>
+    <div class="field"><label>اسم المستخدم</label><input type="text" id="adminUser"></div>
+    <div class="field"><label>كلمة المرور</label><input type="password" id="adminPass"></div>
+    <div class="modal-err" id="adminErr"></div>
+    <div class="actions"><button class="btn btn-ghost" id="closeAdminLogin">إلغاء</button><button class="btn btn-primary" id="submitAdminLogin">دخول</button></div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div class="admin-shell hidden" id="adminShell">
+  <div class="admin-header">
+    <h2>لوحة تحكم التمارين</h2>
+    <button class="btn btn-ghost" id="closeAdmin">→ رجوع لباني البرنامج</button>
+  </div>
+  <div class="panel" style="margin-bottom:22px; border-color:var(--danger);">
+    <h2 style="color:var(--danger)">⚠ علامات خطر عامة — إيقاف أي تمرين والتحويل الطبي الفوري</h2>
+    <p class="sub" style="margin-bottom:10px;">بغض النظر عن منطقة الجسم، الأعراض دي تستوجب تحويل المريض فوراً وعدم الاستمرار في أي برنامج تمارين:</p>
+    <p style="font-size:13.5px; margin:0;">
+      • أعراض متلازمة ذيل الفرس: فقدان إحساس بمنطقة السرج، اضطراب مفاجئ في التحكم بالبول أو البراز، ضعف بالساقين من الجهتين — <b>طوارئ فورية</b><br>
+      • علامات جلطة وريدية عميقة: تورم مفاجئ بساق واحدة مع سخونة واحمرار وألم بالبطة — <b>طوارئ فورية</b><br>
+      • ألم ليلي شديد لا يتحسن بتغيير الوضعية، أو فقدان وزن غير مبرر (احتمال ورم)<br>
+      • حمى أو علامات عدوى مصحوبة بألم أو تورم مفصلي حاد<br>
+      • ضعف أو خدر عصبي متزايد تدريجياً<br>
+      • اشتباه كسر حديث أو عدم استقرار مفصلي لم يُشخَّص بعد<br>
+      • دوخة أو تغيرات بصرية مع حركة الرقبة (اشتباه قصور الشريان الفقري القاعدي)
+    </p>
+  </div>
+  <div class="panel" style="margin-bottom:22px;">
+    <h2 id="adminFormTitle">إضافة تمرين جديد</h2>
+    <div class="grid2">
+      <div class="field"><label>اسم التمرين بالعربي</label><input type="text" id="afName"></div>
+      <div class="field"><label>اسم التمرين بالإنجليزي</label><input type="text" id="afNameEn" placeholder="مثال: Chin Tuck"></div>
+    </div>
+    <div class="field"><label>منطقة الجسم</label>
+      <select id="afRegion">
+        <option value="neck">الرقبة</option><option value="shoulder">الكتف</option><option value="back">الظهر</option>
+        <option value="hip">الورك</option><option value="knee">الركبة</option><option value="ankle">الكاحل والقدم</option>
+      </select>
+    </div>
+    <div class="field"><label>وصف التمرين (يظهر للمريض في الـ PDF)</label><textarea id="afDesc"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label>عدد المجموعات والتكرارات (اختياري)</label><input type="text" id="afSets" placeholder="مثال: ٣ × ١٢"></div>
+      <div class="field"><label>رابط الفيديو (اختياري)</label><input type="url" id="afVideo" placeholder="https://youtube.com/..."></div>
+    </div>
+    <div class="field"><label>الأداء الصحيح (تفاصيل إكلينيكية للدكتور فقط)</label><textarea id="afCorrect"></textarea></div>
+    <div class="field"><label>الأخطاء الشائعة</label><textarea id="afMistakes"></textarea></div>
+    <div class="field"><label>متى يكون ممنوع / علامات الخطر</label><textarea id="afContra"></textarea></div>
+    <div class="field">
+      <label>صور التمرين — روابط جوجل درايف (تقدر تضيف أكتر من صورة)</label>
+      <div style="display:flex; gap:8px;">
+        <input type="url" id="afImageLink" placeholder="https://drive.google.com/file/d/....">
+        <button class="btn btn-ghost btn-sm" id="afAddImage" type="button" style="white-space:nowrap;">+ إضافة صورة</button>
+      </div>
+      <p class="hint">الصق لينك المشاركة من جوجل درايف (تأكد إن الإعدادات "أي شخص لديه الرابط")، دوس "إضافة صورة"، وكرر لأي صورة تانية — مفيد إنك تضيف صورة لوضع البداية وصورة لوضع النهاية مثلاً.</p>
+      <div id="afImageList" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost hidden" id="afCancelEdit">إلغاء التعديل</button>
+      <button class="btn btn-primary" id="afSubmit">إضافة التمرين</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>كل التمارين</h2>
+    <div id="adminList"></div>
+  </div>
+</div>
+
+<script>
+/* ================= Base exercise database ================= */
+const REGIONS = [
+  {key:'neck', label:'Neck'}, {key:'shoulder', label:'Shoulder'}, {key:'back', label:'Back'},
+  {key:'hip', label:'Hip'}, {key:'knee', label:'Knee'}, {key:'ankle', label:'Ankle & Foot'},
+];
+
+const SEED_EXERCISES = [
+  /* ================= الرقبة / Neck ================= */
+  {id:'b1', region:'neck', name:'تمرين الذقن للداخل (تصحيح وضعية الرأس)', nameEn:'Chin Tuck',
+    desc:'الجلوس أو الوقوف باستقامة، وسحب الذقن للخلف بشكل أفقي مستقيم (كأنك بتعمل ذقن مزدوجة) من غير إمالة الرأس لأعلى أو لأسفل، ثم الثبات والرجوع.',
+    sets:'٣ مجموعات × ١٠ تكرارات، ثبات ٥-١٠ ثوانٍ',
+    correct:'الحركة أفقية للخلف بحت مع بقاء النظر للأمام والكتفين مسترخيين؛ التمرين يستهدف عضلات الرقبة العميقة الأمامية (longus colli/capitis) المسؤولة عن دعم الرأس.',
+    mistakes:'إمالة الرأس لأسفل بدل السحب المستقيم للخلف (ده بيحرك الرقبة انثناء مش سحب)، أو رفع الذقن للأعلى، أو حبس النفس، أو حركة سريعة ومفاجئة.',
+    contra:'كسور أو عدم استقرار في الفقرات العنقية، عملية دمج/جراحة رقبة حديثة قبل موافقة الجراح، أعراض قصور الشريان الفقري القاعدي (دوخة أو تغيرات بصرية مع حركة الرقبة)، ضعف عصبي متزايد أو ألم شديد لا يتحسن — يستوجب تحويل فوري.'},
+  {id:'b2', region:'neck', name:'تقوية الرقبة الإيزومترية (متعددة الاتجاهات)', nameEn:'Cervical Isometrics',
+    desc:'وضع راحة اليد على جبهة الرأس (أو جانبه أو مؤخرته) والضغط برفق ضد مقاومة اليد من غير أي حركة فعلية للرقبة، في كل اتجاه: أمام، خلف، وجانبين.',
+    sets:'٣ مجموعات × ١٠ تكرارات لكل اتجاه، ثبات ٥-١٠ ثوانٍ',
+    correct:'مقاومة خفيفة إلى متوسطة تدريجياً، تنفس طبيعي مستمر أثناء الضغط، الرقبة تبقى ثابتة تماماً بدون حركة (الهدف تنشيط العضلة وليس تحريك المفصل).',
+    mistakes:'استخدام قوة زايدة تسبب ألم، حبس النفس (Valsalva)، السماح بحركة فعلية للرأس أثناء "الإيزومتري".',
+    contra:'كسر أو خلع فقري، عدم استقرار الفقرة الفهقية المحورية (شائع في الروماتويد المتقدم أو متلازمة داون)، دوار شديد أو صداع مفاجئ حاد أثناء التمرين.'},
+  {id:'b3', region:'neck', name:'مدى حركة الرقبة الدوراني اللطيف', nameEn:'Cervical Rotation ROM',
+    desc:'تدوير الرأس ببطء ناحية الكتف الأيمن ثم الأيسر لأقصى مدى مريح، من غير قفز أو حركة عنيفة، مع الرجوع لمنتصف الحياد بين كل تكرار.',
+    sets:'٢ مجموعات × ٨-١٠ تكرارات كل جانب',
+    correct:'حركة بطيئة متحكم فيها، الكتفان ثابتان وغير مرتفعين، التوقف عند أول إحساس بشد وليس عند الألم.',
+    mistakes:'رفع الكتف مع الدوران، حركة سريعة أو ارتدادية (bouncing)، محاولة الوصول لأقصى مدى ممكن رغم الألم.',
+    contra:'أعراض قصور الشريان الفقري (دوخة، ازدواج رؤية، تنميل بالوجه مع الدوران)، إصابة حادة بالرقبة لم تُشخَّص بعد، بعد الجراحة مباشرة قبل إذن الجراح.'},
+  {id:'b4', region:'neck', name:'تمدد العضلة شبه المنحرفة العلوية', nameEn:'Upper Trapezius Stretch',
+    desc:'إمالة الرأس ناحية كتف واحد مع تثبيت الكتف الآخر لأسفل (بمسك حافة الكرسي مثلاً)، حتى الشعور بتمدد خفيف من الجانب المقابل لأعلى الرقبة.',
+    sets:'٣ مجموعات × ثبات ١٥-٢٠ ثانية كل جانب',
+    correct:'تمدد خفيف مريح وليس شد مؤلم، التنفس بعمق أثناء الثبات، تثبيت الكتف يمنع تعويض الحركة من مفصل الكتف بدل الرقبة.',
+    mistakes:'الشد بقوة زايدة أو بحركة مفاجئة، عدم تثبيت الكتف فيتحول التمدد لحركة كتف بدل رقبة.',
+    contra:'ألم حاد منتشر لليد أو الذراع (radiculopathy) يزداد مع التمدد، دوار مصاحب، إصابة أو كسر غير مؤكد التشخيص.'},
+
+  /* ================= الكتف / Shoulder ================= */
+  {id:'b5', region:'shoulder', name:'تمرين البندول (كودمان)', nameEn:"Pendulum (Codman's) Exercise",
+    desc:'الانحناء للأمام مع دعم اليد السليمة على طاولة أو كرسي، وترك الذراع المصابة تتدلى بحرية وتتحرك في دوائر صغيرة أو تأرجح خفيف بفعل وزنها فقط من غير مجهود عضلي إرادي.',
+    sets:'٢ مجموعات × ١٠-١٥ دورة، مرتين يومياً',
+    correct:'الحركة سلبية بالكامل (بفعل الجاذبية والانحناء وليس بشد العضلة)، دوائر صغيرة تتوسع تدريجياً حسب الراحة، الكتف مسترخٍ تماماً.',
+    mistakes:'شد عضلات الكتف بنشاط لتحريك الذراع بدل تركها تتأرجح سلبياً، دوائر واسعة جداً من البداية، الوقوف منتصباً بدل الانحناء الصحيح.',
+    contra:'كسر لم يلتئم في عظمة العضد أو الكتف، خلع كتف غير مُرَدّ، فترة التثبيت المبكرة بعد الجراحة حسب بروتوكول الجراح، التهاب أو عدوى نشطة بالمفصل.'},
+  {id:'b6', region:'shoulder', name:'تقوية الدوران الخارجي بالمقاومة', nameEn:'Resisted External Rotation',
+    desc:'ثني المرفق ٩٠ درجة ولصقه بجانب الجسم، وتدوير الساعد للخارج ضد مقاومة شريط مطاطي، مع إبقاء المرفق ثابتاً طول الحركة.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار',
+    correct:'المرفق يبقى ملاصقاً للجسم طول الوقت (لا يتحرك للخارج)، الحركة بطيئة ومتحكم فيها في الاتجاهين، مقاومة تدريجية حسب تحمل الألم.',
+    mistakes:'تحريك المرفق بعيداً عن الجسم (تعويض من الكتف كله بدل عضلات الدوران فقط)، استخدام مقاومة زايدة تسبب رفع الكتف للأعلى.',
+    contra:'تمزق كامل السماكة في وتر الكتف الدوار قبل موافقة الجراح على البرنامج، كسر حديث، خلع غير مستقر يحتاج تثبيت جراحي، ألم حاد مفاجئ أثناء الحركة.'},
+  {id:'b7', region:'shoulder', name:'رفع الذراع الأمامي المتحكم (بعصا أو بدون)', nameEn:'Assisted Forward Flexion (Wand Exercise)',
+    desc:'الاستلقاء أو الوقوف، ومسك عصا بكلتا اليدين، ورفع الذراعين معاً للأمام وللأعلى قدر الممكن بمساعدة الذراع السليمة للمصابة، ثم النزول ببطء.',
+    sets:'٣ مجموعات × ١٢ تكرار',
+    correct:'الذراع السليمة تقود الحركة وتساعد المصابة برفق، عدم القوس الزائد في أسفل الظهر أثناء الرفع، التوقف عند حد الشد الخفيف.',
+    mistakes:'الدفع بقوة لتجاوز نقطة الألم، تقويس الظهر للتعويض عن محدودية حركة الكتف، رفع الكتف بدل الذراع فقط.',
+    contra:'خلع كتف حديث غير مستقر، كسر عنق العضد لم يلتئم، تيبس شديد بعد الجراحة يستلزم تقدم حركة تدريجي محدد من الجراح فقط.'},
+  {id:'b8', region:'shoulder', name:'تمدد الكتف عبر الجسم (الكبسولة الخلفية)', nameEn:'Cross-Body (Posterior Capsule) Stretch',
+    desc:'سحب الذراع أفقياً عبر الصدر باستخدام اليد الأخرى من عند المرفق، حتى الشعور بتمدد خلف الكتف.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية',
+    correct:'تثبيت لوح الكتف (الكتف نفسه لا يرتفع)، تمدد خفيف وليس ألم حاد، التنفس الطبيعي أثناء الثبات.',
+    mistakes:'السحب بقوة مفاجئة، رفع الكتف المصاب أثناء التمدد فيقل تأثير التمرين على الكبسولة الخلفية فعلياً.',
+    contra:'عدم استقرار كتفي (شعور بانخلاع أو "طقطقة" مؤلمة)، التهاب حاد أو تورم واضح بالمفصل، بعد الجراحة مباشرة قبل إذن الجراح بمدى الحركة هذا.'},
+
+  /* ================= الظهر / Back ================= */
+  {id:'b9', region:'back', name:'تمرين القطة والجمل', nameEn:'Cat-Camel (Cat-Cow)',
+    desc:'الوقوف على أربع (يدين وركبتين)، وتحريك العمود الفقري ببطء بين وضع التقوس للأعلى (كالقطة) ووضع الانخفاض للأسفل (كالجمل)، بشكل متصل وسلس.',
+    sets:'٢ مجموعات × ١٠ تكرارات',
+    correct:'حركة بطيئة تشمل كل فقرات العمود بالتساوي، التنفس مع الحركة (زفير مع التقوس، شهيق مع الانخفاض)، مدى مريح غير مؤلم.',
+    mistakes:'حركة سريعة أو مقتصرة على منطقة واحدة فقط من الظهر، الوصول لمدى مؤلم بدل التوقف عند الشد الخفيف.',
+    contra:'كسر فقري غير مستقر، ألم يزداد وينتشر للساق مع أي من الاتجاهين (يستوجب تعديل الاتجاه لا الإيقاف الكامل غالباً، لكن الاستمرار في الاتجاه المؤلم غير مناسب)، أعراض متلازمة ذيل الفرس (فقدان إحساس بمنطقة السرج، اضطراب في التحكم بالبول أو البراز) — حالة طوارئ طبية فورية.'},
+  {id:'b10', region:'back', name:'جسر الحوض (تنشيط عضلات المؤخرة وأسفل الظهر)', nameEn:'Glute Bridge',
+    desc:'الاستلقاء على الظهر مع ثني الركبتين وتثبيت القدمين على الأرض، ثم رفع الحوض عن الأرض بشد عضلات المؤخرة حتى يصبح الجسم خط مستقيم من الركبة للكتف، ثم النزول ببطء.',
+    sets:'٣ مجموعات × ١٠-١٢ تكرار',
+    correct:'الرفع بشد عضلة المؤخرة أساساً (وليس بقوس أسفل الظهر الزائد)، القدمان ثابتتان بعرض الحوض، النزول متحكم فيه وليس سقوط.',
+    mistakes:'المبالغة في قوس أسفل الظهر أثناء الرفع، رفع الحوض عالياً جداً بشكل يضغط على الرقبة، استخدام الفخذين الخلفيين فقط بدل المؤخرة.',
+    contra:'كسر حوضي أو عجزي حديث، بعد جراحة أسفل الظهر مباشرة قبل إذن الجراح، ألم حاد أثناء الحركة نفسها يستدعي التوقف والتقييم.'},
+  {id:'b11', region:'back', name:'تمرين الكلب الطائر (ثبات الجذع)', nameEn:'Bird-Dog',
+    desc:'الوقوف على أربع، ومد ذراع واحدة للأمام مع الساق المعاكسة للخلف في نفس الوقت، مع الحفاظ على استقامة الظهر والحوض بدون ميل، ثم الرجوع ببطء وتبديل الجانب.',
+    sets:'٣ مجموعات × ٨-١٠ تكرارات لكل جانب',
+    correct:'الحوض والكتفان يبقيان مستويين (بدون دوران أو ميل جانبي)، شد عضلات البطن العميقة قبل الحركة، حركة بطيئة متحكم فيها مع التوازن.',
+    mistakes:'رفع الذراع والساق عالياً جداً بشكل يسبب دوران الحوض أو قوس أسفل الظهر، فقدان التوازن بسبب سرعة الحركة.',
+    contra:'عدم استقرار فقري حاد أو كسر حديث، ألم إشعاعي شديد يزداد مع الحركة، دوخة أو مشاكل توازن تمنع الوضع على أربع بأمان.'},
+  {id:'b12', region:'back', name:'تقوية الباسطات الخلفية (مع الحذر من فرط التمدد)', nameEn:'Prone Back Extension (Modified)',
+    desc:'الاستلقاء على البطن، ورفع أعلى الجذع قليلاً عن الأرض بمساعدة عضلات الظهر مع إبقاء الحوض ملاصقاً للأرض، ثم النزول ببطء (مدى محدود وليس رفعاً كاملاً).',
+    sets:'٢-٣ مجموعات × ٨-١٠ تكرارات',
+    correct:'رفع بمدى صغير ومتحكم فيه، النظر للأسفل للحفاظ على استقامة الرقبة، التركيز على الشد العضلي وليس الوصول لأقصى ارتفاع.',
+    mistakes:'الرفع الكامل والمبالغ فيه (زي وضعية "سوبرمان" الكاملة) بدون تقييم مسبق، رفع الرأس بشدة للخلف مسبباً إجهاد رقبي.',
+    contra:'ضيق قناة العمود الفقري (Spinal Stenosis) أو انزلاق فقري (Spondylolisthesis) مع ألم يزداد في وضعيات التمدد — يُستبدل بتمارين انثناء بدلاً منه، كسر فقري، الفترة الحادة من ألم الظهر مع أعراض إشعاعية للساق.'},
+
+  /* ================= الورك / Hip ================= */
+  {id:'b13', region:'hip', name:'رفع الساق الجانبي (تقوية الخاطفة)', nameEn:'Side-Lying Hip Abduction',
+    desc:'الاستلقاء على الجانب مع استقامة الجسم، ورفع الساق العلوية المستقيمة للأعلى ببطء (بدون دوران للأمام أو للخلف)، ثم الإنزال المتحكم فيه.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار لكل جانب',
+    correct:'الحوض ثابت وغير مائل للخلف أثناء الرفع، الرفع لمدى معتدل (٣٠-٤٥ درجة) وليس أقصى ارتفاع ممكن، القدم للأمام قليلاً وليست موجهة للسقف بالكامل.',
+    mistakes:'إمالة الحوض للخلف لتعويض ضعف العضلة (فيعمل مكانها عضلات الفخذ المثنية)، رفع الساق بسرعة وارتداد بدل حركة متحكم فيها.',
+    contra:'كسر حديث في الورك أو الحوض، بعد جراحة استبدال مفصل الورك حسب احتياطات الجراح (خاصة تحديد مدى الحركة الجانبي)، ألم حاد في منطقة الفخذ الخارجية غير مُشخَّص.'},
+  {id:'b14', region:'hip', name:'تمدد العضلة الحرقفية القطنية (ثاني العضلة الخافضة)', nameEn:'Kneeling Hip Flexor Stretch',
+    desc:'الركوع على ركبة واحدة مع الساق الأخرى للأمام بزاوية ٩٠ درجة، ودفع الحوض للأمام برفق (وليس الانحناء) حتى الشعور بتمدد في مقدمة الفخذ الخلفي.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية لكل جانب',
+    correct:'الحوض يتحرك للأمام مع الحفاظ على استقامة الجذع (بدون قوس زائد في أسفل الظهر)، شد عضلة المؤخرة الخلفية يساعد على تعميق التمدد بأمان.',
+    mistakes:'المبالغة في قوس أسفل الظهر بدل دفع الحوض فعلياً، الاندفاع السريع بدل التمدد التدريجي.',
+    contra:'بعد جراحة استبدال الورك مباشرة قبل تحديد الجراح لاحتياطات فرط المد، كسر حديث بالحوض أو الفخذ، ألم أربي حاد غير مُشخَّص (احتمال فتق أو إصابة أخرى).'},
+  {id:'b15', region:'hip', name:'المحارة (تقوية الدوارات الخارجية والخاطفة)', nameEn:'Clamshell',
+    desc:'الاستلقاء على الجانب مع ثني الركبتين والوركين وملاصقة القدمين لبعض، ثم فتح الركبة العلوية للأعلى مع بقاء القدمين ملتصقتين، ثم الإغلاق ببطء.',
+    sets:'٣ مجموعات × ١٥ تكرار لكل جانب',
+    correct:'الحوض ثابت تماماً بدون دوران للخلف، الحركة من مفصل الورك فقط، يمكن إضافة شريط مقاومة حول الركبتين للتقدم بالتمرين.',
+    mistakes:'دوران الحوض للخلف بدل فتح الركبة (تعويض شائع جداً)، فتح الركبة لمدى واسع جداً يفقد التحكم في الحوض.',
+    contra:'التهاب حاد بمفصل الورك، بعد الجراحة مباشرة حسب بروتوكول الجراح، ألم حاد يمتد للفخذ أثناء الحركة نفسها.'},
+  {id:'b16', region:'hip', name:'جسر الورك أحادي الساق (تقدم متقدم)', nameEn:'Single-Leg Hip Bridge',
+    desc:'الاستلقاء مع ثني ركبة واحدة وتثبيت قدمها على الأرض، ومد الساق الأخرى مستقيمة، ثم رفع الحوض بالاعتماد على الساق المثبتة فقط.',
+    sets:'٣ مجموعات × ٨-١٠ تكرارات لكل جانب',
+    correct:'الحوض يبقى مستوياً وغير مائل للجانب المرفوع فيه الساق، الرفع بشد المؤخرة تدريجياً بعد إتقان الجسر بالساقين معاً أولاً.',
+    mistakes:'ميل الحوض للجانب الأضعف (علامة على ضعف عضلات الحوض الجانبية)، البدء بهذا التمرين قبل إتقان جسر الساقين الأساسي.',
+    contra:'ضعف توازن يمنع الوضع الآمن، كسر حديث بالحوض أو الورك، ألم حاد أثناء الرفع أحادي الساق يستدعي الرجوع للتمرين الأساسي بساقين.'},
+
+  /* ================= الركبة / Knee ================= */
+  {id:'b17', region:'knee', name:'تنشيط عضلة الفخذ الرباعية إيزومترياً', nameEn:'Quad Sets',
+    desc:'الجلوس أو الاستلقاء مع فرد الركبة، وشد عضلة مقدمة الفخذ بقوة (كأنك بتدفع خلف الركبة للأرض) بدون تحريك المفصل، ثم الثبات والاسترخاء.',
+    sets:'٣ مجموعات × ١٠-١٥ تكرار، ثبات ٥ ثوانٍ',
+    correct:'شد واضح ومحسوس في عضلة الفخذ الأمامية، الركبة تبقى بلا حركة تماماً، يمكن وضع منشفة ملفوفة خلف الركبة للمساعدة على الإحساس بالشد ضدها.',
+    mistakes:'شد خفيف غير فعّال، حبس النفس أثناء الشد، تعويض الحركة بعضلات الفخذ من الأمام (الورك) بدل الرباعية نفسها.',
+    contra:'حسب بروتوكول الجراح بعد عمليات معينة (مثل ترميم وتر الرضفة) قد يكون ممنوعاً مؤقتاً — يُتبع دائماً بروتوكول الجراح المحدد، كسر حديث لم يُثبَّت.'},
+  {id:'b18', region:'knee', name:'رفع الساق المستقيمة', nameEn:'Straight Leg Raise',
+    desc:'الاستلقاء مع ثني الركبة السليمة وفرد الركبة المصابة تماماً، ثم شد عضلة الفخذ الأمامية أولاً ورفع الساق المفرودة لارتفاع الركبة الأخرى المثنية، ثم النزول ببطء.',
+    sets:'٣ مجموعات × ١٠-١٢ تكرار',
+    correct:'شد عضلة الفخذ الرباعية قبل وأثناء الرفع لمنع "تدلي" الركبة (extensor lag)، الرفع والنزول بحركة بطيئة متحكم فيها بالكامل.',
+    mistakes:'رفع الساق مع بقاء الركبة مرتخية قليلاً (علامة ضعف يجب تصحيحها بالرجوع لتنشيط الرباعية الإيزومتري أولاً)، رفع سريع بارتداد.',
+    contra:'وجود "extensor lag" واضح (عدم القدرة على فرد الركبة بالكامل) يستوجب العودة لتمارين تنشيط أبسط، حسب بروتوكول الجراح بعد جراحات الرباط الصليبي أو الرضفة، كسر حديث.'},
+  {id:'b19', region:'knee', name:'القرفصاء الجزئي المدعوم', nameEn:'Supported Mini Squat',
+    desc:'الوقوف بمواجهة كرسي أو حائط للدعم، والنزول الجزئي للأسفل بثني الركبتين حتى ٣٠-٤٥ درجة تقريباً مع بقاء الركبة خلف أصابع القدم، ثم الصعود ببطء.',
+    sets:'٣ مجموعات × ١٠ تكرارات',
+    correct:'الوزن موزع على كامل القدم وليس مقدمتها فقط، الركبتان تتجهان في اتجاه أصابع القدم (بدون ميل للداخل)، مدى النزول يزيد تدريجياً حسب التحمل.',
+    mistakes:'ميل الركبتين للداخل أثناء النزول (valgus)، النزول لمدى عميق جداً قبل الجاهزية، الاعتماد الكامل على الدعم بدل عمل العضلة فعلياً.',
+    contra:'عدم استقرار الركبة الحاد (شعور "بالانخلاع")، تقييد الوزن على القدم (Weight-bearing restriction) حسب توجيه الجراح بعد الجراحة، انصباب مفصلي حاد مصحوب بحرارة أو احمرار (احتمال التهاب مفصلي إنتاني — يستوجب تحويل طبي عاجل وليس تمرين).'},
+  {id:'b20', region:'knee', name:'تمدد أوتار الركبة الخلفية', nameEn:'Hamstring Stretch',
+    desc:'الاستلقاء أو الجلوس مع مد الساق المستهدفة، والانحناء للأمام برفق من الورك (مع استقامة الظهر) حتى الشعور بتمدد خلف الفخذ.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية',
+    correct:'الانحناء من مفصل الورك وليس من تقويس الظهر، تمدد خفيف تدريجي وليس شد مؤلم، يمكن استخدام حزام حول القدم للمساعدة بدون إجهاد الظهر.',
+    mistakes:'الارتداد السريع (ballistic stretching) بدل التمدد الثابت الهادئ، تقويس أسفل الظهر بدل الانحناء من الورك.',
+    contra:'تمزق حاد بعضلة أوتار الركبة الخلفية (خلال الأيام الأولى للإصابة) — يحتاج راحة وتقييم أولاً قبل التمدد، بعد جراحة الرباط الصليبي إذا كان الوتر الخلفي هو مصدر الطعم الجراحي (حسب بروتوكول الجراح تحديداً).'},
+
+  /* ================= الكاحل والقدم / Ankle & Foot ================= */
+  {id:'b21', region:'ankle', name:'مدى حركة الكاحل (دوران كامل)', nameEn:'Ankle Circles / ROM',
+    desc:'رفع القدم عن الأرض قليلاً وتحريكها في دوائر كاملة من مفصل الكاحل فقط، في الاتجاهين، بأقصى مدى مريح.',
+    sets:'٢ مجموعات × ١٠ دورات كل اتجاه',
+    correct:'الحركة من الكاحل فقط وليس الساق كلها، دوائر كاملة وواضحة تشمل كل الاتجاهات (فرد، ثني، ميل للداخل والخارج)، بطيئة ومتحكم فيها.',
+    mistakes:'دوائر صغيرة وغير مكتملة، تحريك الساق كلها بدل الكاحل تحديداً.',
+    contra:'كسر غير مؤكد الاستقرار في الكاحل أو القدم، علامات جلطة وريدية عميقة (تورم مفاجئ بالساق مع ألم وسخونة واحمرار) — تحويل طبي عاجل فوري وليس تمرين، أول أيام الإصابة الحادة قبل تقييم درجة الالتواء.'},
+  {id:'b22', region:'ankle', name:'تمدد وتر أخيل (العضلة التوأمية والنعلية)', nameEn:'Achilles / Calf Stretch',
+    desc:'الوقوف بمواجهة الحائط مع دفع الساق الخلفية للخلف والكعب ملاصق للأرض، وثني الركبة الأمامية مع دفع الحوض للأمام برفق حتى الشعور بتمدد في الساق الخلفية. تكرار مع ثني الركبة الخلفية قليلاً لاستهداف العضلة النعلية.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية لكل وضعية',
+    correct:'الكعب الخلفي يبقى ملاصقاً للأرض طول الوقت، القدمان تشيران للأمام مباشرة (بدون ميل للخارج)، تمدد تدريجي هادئ.',
+    mistakes:'رفع الكعب عن الأرض (يلغي فاعلية التمدد)، ميل القدم للخارج بدل الاتجاه المستقيم.',
+    contra:'اشتباه تمزق أو قطع في وتر أخيل (ألم مفاجئ حاد كالضربة خلف الكاحل، صعوبة أو عجز عن الوقوف على أطراف الأصابع) — حالة طارئة تستوجب تقييم طبي فوري وليس تمديد، بعد جراحة ترميم الوتر قبل إذن الجراح بمدى الحركة.'},
+  {id:'b23', region:'ankle', name:'رفع الكعبين (تقوية بطة الساق)', nameEn:'Heel Raises (Calf Raises)',
+    desc:'الوقوف باستقامة (مع إمكانية الاستناد الخفيف على حائط أو كرسي للتوازن)، والارتفاع على أطراف أصابع القدمين قدر الممكن، ثم النزول ببطء وتحكم.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار',
+    correct:'الارتفاع بالتساوي على القدمين معاً بداية، الوزن موزع على أطراف الأصابع بالكامل وليس جانب واحد، النزول بطيء ومتحكم فيه (الجزء الأهم للقوة الوظيفية).',
+    mistakes:'الارتفاع السريع مع نزول سريع "ساقط" بدل التحكم، الاعتماد الكامل على الدعم بدل عمل عضلة الساق.',
+    contra:'إصابة حادة بوتر أخيل غير مقيَّمة، كسر بالكاحل أو القدم قبل السماح بحمل الوزن حسب الطبيب، ألم حاد مفاجئ أثناء الرفع.'},
+  {id:'b24', region:'ankle', name:'تقوية الكاحل الرباعية الاتجاه بالمقاومة', nameEn:'4-Way Resisted Ankle Exercise',
+    desc:'ربط شريط مقاومة حول مقدمة القدم وتثبيت الطرف الآخر، وتحريك القدم ضد المقاومة في أربع اتجاهات: فرد لأسفل، ثني لأعلى، ميل للداخل، وميل للخارج.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار لكل اتجاه',
+    correct:'الحركة من الكاحل فقط مع تثبيت الساق، مقاومة تدريجية حسب التحمل، التحكم في الحركة في الاتجاهين (الذهاب والعودة).',
+    mistakes:'تحريك الساق كلها بدل الكاحل، استخدام مقاومة عالية جداً من البداية خصوصاً في التواءات الرباط الجانبي الحديثة.',
+    contra:'التواء "عالي" في الكاحل (Syndesmotic/High Ankle Sprain) يحتاج فترة تثبيت أطول قبل المقاومة النشطة، كسر غير مستقر، علامات عدوى أو التهاب نشط بالمنطقة.'},
+
+  /* ===== إضافات الرقبة ===== */
+  {id:'b25', region:'neck', name:'الانثناء القحفي الرقبي العميق', nameEn:'Craniocervical Flexion Exercise (CCFE)',
+    desc:'الاستلقاء على الظهر مع دعم خفيف تحت الرأس، وعمل إيماءة "نعم" صغيرة جداً وخفيفة (كأنك بتومئ برأسك موافقاً) بحركة دقيقة من أعلى الرقبة فقط دون تحريك الرأس كله للخلف.',
+    sets:'٣ مجموعات × ١٠ تكرارات، ثبات ١٠ ثوانٍ',
+    correct:'حركة صغيرة جداً ودقيقة (مليمترات) من المفصل العلوي للرقبة فقط، بدون تفعيل عضلات الرقبة السطحية الكبيرة أو شد الذقن للأسفل بقوة.',
+    mistakes:'استخدام عضلات الرقبة السطحية الكبيرة بدل العميقة (علامته شد واضح بجانب الرقبة)، سحب الذقن للأسفل بقوة زايدة بدل الإيماءة الخفيفة الدقيقة.',
+    contra:'نفس محاذير تمارين الرقبة العامة: كسر أو عدم استقرار فقري، أعراض قصور الشريان الفقري القاعدي، ألم حاد يزداد مع المحاولة.'},
+  {id:'b26', region:'neck', name:'تمدد العضلة الرافعة للكتف', nameEn:'Levator Scapulae Stretch',
+    desc:'إمالة الرأس للأسفل وللجانب في نفس الوقت (كأنك بتوجه أنفك ناحية الإبط) مع تثبيت الكتف، حتى الشعور بتمدد في الجانب الخلفي من الرقبة.',
+    sets:'٣ مجموعات × ثبات ١٥-٢٠ ثانية كل جانب',
+    correct:'الزاوية المركبة (أسفل + جانب) هي المفتاح لاستهداف هذه العضلة تحديداً وليس مجرد إمالة جانبية بسيطة، تثبيت الكتف يمنع تعويض الحركة.',
+    mistakes:'الاكتفاء بإمالة جانبية بسيطة بدون إضافة زاوية الانحناء للأسفل، سحب الرأس بقوة بدل التمدد التدريجي اللطيف.',
+    contra:'ألم إشعاعي يزداد مع التمدد باتجاه الذراع، دوار مصاحب، إصابة رقبة حديثة غير مُقيَّمة.'},
+  {id:'b27', region:'neck', name:'ضم لوحي الكتف', nameEn:'Scapular Retraction (Squeeze)',
+    desc:'الجلوس أو الوقوف باستقامة، وضم لوحي الكتف نحو بعضهما للخلف (كأنك بتمسك قلم بين لوحي كتفك) مع إبقاء الكتفين لأسفل وليس مرتفعين، ثم الاسترخاء.',
+    sets:'٣ مجموعات × ١٢ تكرار، ثبات ٥ ثوانٍ',
+    correct:'الحركة للخلف وللأسفل معاً (ليس رفع الكتفين للأعلى)، مفيد لدعم وضعية الرقبة والظهر العلوي معاً خصوصاً عند الجلوس الطويل.',
+    mistakes:'رفع الكتفين نحو الأذنين بدل الضم للخلف، حركة سريعة بدل ثبات محسوب.',
+    contra:'ألم حاد بين لوحي الكتف مصحوب بأعراض أخرى (يستدعي تقييم القلب أو الرئة قبل الاستمرار في حالات نادرة)، إصابة كتف حديثة تمنع هذه الحركة.'},
+  {id:'b28', region:'neck', name:'الإمالة الجانبية النشطة للرقبة', nameEn:'Active Lateral Flexion ROM',
+    desc:'إمالة الرأس ببطء ناحية الكتف (الأذن تقترب من الكتف) دون رفع الكتف، ثم الرجوع للوضع الحيادي وتكرار للجانب الآخر.',
+    sets:'٢ مجموعات × ٨-١٠ تكرارات كل جانب',
+    correct:'حركة نقية للرقبة فقط بدون دوران أو ميل للأمام، الكتفان ثابتان لأسفل طوال الحركة.',
+    mistakes:'رفع الكتف لملاقاة الأذن بدل ثباته، إضافة دوران غير مقصود للرأس أثناء الإمالة.',
+    contra:'دوخة أو أعراض عصبية مع الحركة، إصابة حادة غير مُشخَّصة، ألم يمتد للذراع يزداد مع الإمالة (قد يشير لضغط جذر عصبي).'},
+  {id:'b29', region:'neck', name:'تمدد الصدر العلوي فوق أسطوانة', nameEn:'Thoracic Extension over Foam Roller',
+    desc:'الاستلقاء مع وضع أسطوانة إسفنجية أفقياً تحت أعلى الظهر (بين لوحي الكتف)، ودعم الرأس باليدين، وتمديد أعلى الظهر برفق للخلف فوق الأسطوانة.',
+    sets:'٢-٣ مجموعات × ثبات ٢٠-٣٠ ثانية أو ٨-١٠ حركات صعود ونزول لطيفة',
+    correct:'الحركة من الظهر العلوي (الصدري) وليس أسفل الظهر، مهم لتحسين وضعية الرأس الأمامية لأن تيبس أعلى الظهر بيحمّل الرقبة زيادة.',
+    mistakes:'وضع الأسطوانة على أسفل الظهر بالخطأ بدل أعلى الظهر، تمديد الرقبة نفسها بقوة بدل الاعتماد على دعم اليدين.',
+    contra:'هشاشة عظام شديدة (خطر كسر انضغاطي)، ألم حاد بمنتصف الظهر غير مُشخَّص، كسر فقري حديث في أي منطقة بالعمود الفقري.'},
+
+  /* ===== إضافات الكتف ===== */
+  {id:'b30', region:'shoulder', name:'تمرين تثبيت لوح الكتف', nameEn:'Scapular Stabilization (Squeeze/Row)',
+    desc:'الجلوس أو الوقوف، وسحب لوحي الكتف للخلف وللأسفل معاً (كحركة تجديف بسيطة)، مع إمكانية استخدام شريط مقاومة للتقدم بالتمرين.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار',
+    correct:'الحركة من لوح الكتف بشكل منفصل عن حركة الذراع، أساس مهم قبل أي تمرين تقوية أخرى للكتف لأن ثبات اللوح شرط لصحة حركة المفصل.',
+    mistakes:'استخدام الذراع فقط بدون تفعيل عضلات لوح الكتف، رفع الكتفين للأعلى بدل السحب للخلف والأسفل.',
+    contra:'كسر لوح الكتف أو الترقوة غير الملتئم، بعد الجراحة مباشرة حسب بروتوكول محدد من الجراح.'},
+  {id:'b31', region:'shoulder', name:'تمدد النوم الجانبي (الكبسولة الخلفية العميقة)', nameEn:'Sleeper Stretch',
+    desc:'الاستلقاء على الجانب المصاب مع ثني الكتف والمرفق ٩٠ درجة، ثم استخدام اليد الأخرى للضغط برفق على الساعد لأسفل باتجاه الأرض (دوران داخلي).',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية',
+    correct:'ضغط لطيف وتدريجي فقط، مفيد بشكل خاص لمن يعانون تيبس الكبسولة الخلفية (شائع في الرياضيين اللي بيستخدموا الذراع فوق الرأس بكثرة).',
+    mistakes:'الضغط بقوة زايدة يسبب ألم بدل تمدد آمن، عدم تثبيت لوح الكتف من الانزلاق للأمام أثناء التمدد.',
+    contra:'عدم استقرار كتفي أو تاريخ خلع متكرر، التهاب حاد بالمفصل، ألم حاد أثناء الضغط يستدعي التوقف الفوري.'},
+  {id:'b32', region:'shoulder', name:'تمرين الدفع الجداري بلص (تنشيط المنشارية الأمامية)', nameEn:'Push-Up Plus',
+    desc:'من وضعية دفع (على الحائط أو الأرض حسب المستوى)، بعد فرد الذراعين بالكامل، دفع الجسم للأمام قليلاً بحركة إضافية صغيرة من لوح الكتف (كأنك بتدفع الأرض بعيداً)، ثم الرجوع.',
+    sets:'٣ مجموعات × ١٠-١٢ تكرار',
+    correct:'الحركة الإضافية الصغيرة من لوح الكتف بعد فرد الذراع هي جوهر التمرين (تنشط العضلة المنشارية الأمامية المهمة لثبات لوح الكتف)، البدء من وضعية الحائط الأسهل قبل الأرض.',
+    mistakes:'الاكتفاء بحركة الدفع العادية بدون الحركة الإضافية من لوح الكتف، البدء بوضعية صعبة جداً (على الأرض) قبل الجاهزية.',
+    contra:'ألم أمامي بالكتف يزداد مع الحمل على الذراع الممدودة، كسر بالمعصم أو الذراع يمنع حمل الوزن، عدم استقرار كتفي شديد.'},
+  {id:'b33', region:'shoulder', name:'الإبعاد الأفقي بطنياً (تقوية عضلات لوح الكتف الخلفية)', nameEn:'Prone Horizontal Abduction (Blackburn)',
+    desc:'الاستلقاء على البطن مع تدلي الذراعين، ورفعهما جانبياً للخارج بمستوى الكتف تقريباً (حرف T) مع إبهام لأعلى، ثم النزول ببطء.',
+    sets:'٣ مجموعات × ١٠-١٢ تكرار',
+    correct:'رفع خفيف بمدى معتدل مع التركيز على ضم لوحي الكتف أثناء الرفع، وزن خفيف جداً أو بدون وزن في البداية.',
+    mistakes:'استخدام وزن زايد من البداية يسبب تعويض من الرقبة أو أسفل الظهر، رفع الذراعين لمستوى أعلى من الكتف بشكل يجهد المفصل.',
+    contra:'التهاب حاد بمفصل الكتف، تمزق كامل بوتر الكتف الدوار قبل موافقة الجراح، ألم حاد أثناء الرفع.'},
+  {id:'b34', region:'shoulder', name:'التنشيط الإيزومتري للكتف (المرحلة المبكرة)', nameEn:'Isometric Shoulder Exercises',
+    desc:'الوقوف بجانب حائط أو باب، ودفع الذراع (من مواضع مختلفة: للأمام، للخلف، للجانب) ضد سطح ثابت بقوة معتدلة دون أي حركة فعلية بالمفصل.',
+    sets:'٣ مجموعات × ثبات ١٠ ثوانٍ لكل اتجاه',
+    correct:'مناسب جداً في المراحل المبكرة المؤلمة لأنه بيحمّل العضلة بدون تحريك المفصل المصاب، البدء بقوة خفيفة والزيادة تدريجياً حسب تحمل الألم.',
+    mistakes:'الدفع بقوة زايدة تسبب ألم حاد، حبس النفس أثناء الدفع.',
+    contra:'كسر حديث لم يتماسك، خلع غير مستقر، ألم حاد فوري عند أي محاولة دفع يستدعي تقييم إضافي قبل الاستمرار.'},
+
+  /* ===== إضافات الظهر ===== */
+  {id:'b35', region:'back', name:'إمالة الحوض الخلفية', nameEn:'Posterior Pelvic Tilt',
+    desc:'الاستلقاء مع ثني الركبتين، وشد عضلات البطن السفلية لتسطيح أسفل الظهر ضد الأرض (إمالة الحوض للخلف) دون رفع المؤخرة، ثم الاسترخاء.',
+    sets:'٣ مجموعات × ١٠-١٢ تكرار، ثبات ٥ ثوانٍ',
+    correct:'حركة دقيقة وصغيرة من الحوض فقط، غالباً أول تمرين يُعلَّم للمريض لبناء وعي بالتحكم في وضعية الحوض قبل التمارين الأكبر.',
+    mistakes:'استخدام عضلات المؤخرة لرفع الجسم بدل شد البطن السفلي لتسطيح الظهر، مبالغة في الحركة بدل الدقة الصغيرة المطلوبة.',
+    contra:'ألم حاد يزداد مع الحركة، كسر فقري حديث، الفترة الحادة جداً من الإصابة قبل التقييم الأولي.'},
+  {id:'b36', region:'back', name:'تمرين الطي الجزئي للبطن (مع حماية الرقبة)', nameEn:'Modified Curl-Up (McGill)',
+    desc:'الاستلقاء مع ثني ركبة واحدة ومد الأخرى، ووضع اليدين تحت أسفل الظهر كدعم، ورفع الرأس والكتفين قليلاً جداً عن الأرض (بدون طي كامل للجذع) مع شد عضلات البطن، ثم النزول ببطء.',
+    sets:'٣ مجموعات × ٦-٨ تكرارات، ثبات ٧-٨ ثوانٍ',
+    correct:'رفع بمدى صغير جداً (سنتيمترات) وليس جلوس كامل، الهدف شد عضلي إيزومتري وليس حركة كبيرة، حماية الرقبة بعدم شدها للأمام.',
+    mistakes:'محاولة عمل "بطن" كامل تقليدي بمدى كبير (بيزود ضغط على الأقراص الفقرية بلا داعي)، شد الرقبة للأمام بدل قيادة الحركة من البطن.',
+    contra:'ألم حاد يزداد مع أي انثناء للجذع، كسر فقري حديث، الفترة الحادة الأولى من الانزلاق الغضروفي مع أعراض إشعاعية شديدة.'},
+  {id:'b37', region:'back', name:'البلانك الجانبي المعدّل', nameEn:'Modified Side Plank',
+    desc:'الاستلقاء على الجانب مع ثني الركبتين، والاستناد على المرفق والساعد، ورفع الحوض عن الأرض حتى يصبح الجسم من الركبة للكتف خط مستقيم، والثبات.',
+    sets:'٣ مجموعات × ثبات ١٠-٢٠ ثانية كل جانب',
+    correct:'الجسم في خط مستقيم بدون تهدل بالحوض للأسفل أو ارتفاع زايد، من تمارين ثبات الجذع الجانبي المهمة (جزء من "الثلاثة الكبار" لماكجيل لحماية أسفل الظهر).',
+    mistakes:'تهدل الحوض للأسفل أثناء الثبات (علامة تعب أو ضعف)، حبس النفس بدل التنفس الطبيعي أثناء الثبات.',
+    contra:'ألم بالكتف يمنع الاستناد على المرفق بأمان، كسر ضلعي أو بالحوض حديث، ألم حاد بأسفل الظهر مع الوضعية الجانبية.'},
+  {id:'b38', region:'back', name:'تمدد الركبتين للصدر', nameEn:'Knee-to-Chest Stretch',
+    desc:'الاستلقاء على الظهر، وسحب ركبة واحدة (أو الاثنين معاً) نحو الصدر برفق باليدين حتى الشعور بتمدد أسفل الظهر، ثم الرجوع ببطء.',
+    sets:'٣ مجموعات × ثبات ١٥-٢٠ ثانية',
+    correct:'تمدد لطيف تدريجي، مفيد بشكل خاص للألم المرتبط بأوضاع التمدد الزايد (Extension-biased pain)، يمكن البدء بساق واحدة قبل الاثنين معاً.',
+    mistakes:'السحب بقوة مفاجئة، البدء بالساقين معاً قبل تجربة ساق واحدة والتأكد من عدم زيادة الألم.',
+    contra:'ألم إشعاعي يزداد وضوحاً مع الانثناء (علامة على أن هذا الاتجاه غير مناسب لهذه الحالة تحديداً — يُستبدل بتمارين تمديد بدلاً منه)، كسر فقري حديث، أعراض متلازمة ذيل الفرس.'},
+  {id:'b39', region:'back', name:'تمديد أسفل الظهر وقوفاً', nameEn:'Standing Lumbar Extension (Press-Back)',
+    desc:'الوقوف مع وضع اليدين على أسفل الظهر (على الوركين)، والانحناء للخلف برفق من أسفل الظهر قدر الممكن بأمان، ثم الرجوع للوضع المستقيم.',
+    sets:'٢-٣ مجموعات × ١٠ تكرارات',
+    correct:'حركة بطيئة متحكم فيها، مفيدة غالباً للألم المرتبط بأوضاع الانثناء الطويلة (كالجلوس)، التوقف فوراً لو الألم بدأ ينتشر للساق بدل التمركز بالظهر.',
+    mistakes:'الانحناء للخلف بسرعة أو بمدى كبير من البداية، الاستمرار رغم انتشار الألم للساق (علامة تستدعي التوقف لا الاستمرار).',
+    contra:'ضيق قناة العمود الفقري أو انزلاق فقري يزداد ألمهما مع التمديد، كسر فقري، أي حالة يزداد فيها الألم الإشعاعي للساق مع هذه الحركة تحديداً.'},
+
+  /* ===== إضافات الورك ===== */
+  {id:'b40', region:'hip', name:'مد الورك وقوفاً (تقوية المؤخرة)', nameEn:'Standing Hip Extension',
+    desc:'الوقوف مع الاستناد على كرسي أو حائط للتوازن، ومد الساق للخلف مستقيمة (من الورك وليس بتقويس الظهر) مع شد عضلة المؤخرة، ثم الرجوع ببطء.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار لكل جانب',
+    correct:'الحركة من مفصل الورك فقط مع بقاء الجذع مستقيماً بدون تقويس أسفل الظهر للتعويض، مدى الحركة صغير نسبياً (لا داعي لرفع الساق عالياً).',
+    mistakes:'تقويس أسفل الظهر لرفع الساق أعلى (تعويض شائع يقلل فاعلية التمرين على المؤخرة)، الاستناد الكامل على الدعم بدل العمل الفعلي بالعضلة.',
+    contra:'بعد جراحة استبدال مفصل الورك حسب احتياطات المد الزائد للجراح، كسر حديث بالورك أو الحوض، ألم حاد أثناء الحركة.'},
+  {id:'b41', region:'hip', name:'تمدد العضلة الكمثرية (الشكل ٤)', nameEn:'Piriformis Stretch (Figure-4)',
+    desc:'الاستلقاء مع ثني الركبتين، ووضع كاحل الساق المستهدفة فوق ركبة الساق الأخرى (شكل رقم ٤)، ثم سحب الساق السفلية نحو الصدر برفق حتى الشعور بتمدد عميق في المؤخرة.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية لكل جانب',
+    correct:'تمدد تدريجي هادئ، مفيد خصوصاً لمن يعانون شد أو ألم عميق بالمؤخرة قد يترافق مع تنميل للساق (متلازمة الكمثرية).',
+    mistakes:'الشد بقوة مفاجئة، تجاهل ألم حاد ينتشر للساق أثناء التمدد بدل تخفيف الشدة فوراً.',
+    contra:'ألم إشعاعي شديد يزداد بوضوح مع هذه الوضعية تحديداً، بعد جراحة استبدال الورك حسب احتياطات الجراح، إصابة حادة غير مُشخَّصة بمفصل الورك.'},
+  {id:'b42', region:'hip', name:'تقريب الورك (الساق السفلية جانبياً)', nameEn:'Side-Lying Hip Adduction',
+    desc:'الاستلقاء على الجانب مع مد الساق السفلية مستقيمة وثني الساق العلوية للأمام (قدمها على الأرض)، ثم رفع الساق السفلية للأعلى نحو الساق العلوية، ثم الإنزال ببطء.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار لكل جانب',
+    correct:'حركة نقية من الورك بدون دوران للساق، عضلات المقربة غالباً بتتنسى في برامج التقوية رغم أهميتها لثبات الحوض والركبة.',
+    mistakes:'دوران الساق أثناء الرفع بدل حركة مستقيمة، رفع سريع بارتداد بدل تحكم كامل.',
+    contra:'شد أو تمزق حاد بعضلات الفخذ الداخلية (يحتاج راحة أولاً)، كسر حديث بالحوض أو الفخذ، ألم أربي حاد غير مُشخَّص.'},
+  {id:'b43', region:'hip', name:'إبعاد الورك وقوفاً بالمقاومة', nameEn:'Standing Hip Abduction (Band)',
+    desc:'الوقوف مع ربط شريط مقاومة حول الكاحلين أو أعلى الركبتين، والاستناد على ساق واحدة، وإبعاد الساق الأخرى جانبياً ضد المقاومة، ثم الرجوع ببطء.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار لكل جانب',
+    correct:'الجذع يبقى مستقيماً بدون ميل جانبي للتعويض، تقدم وظيفي طبيعي بعد إتقان تمرين الرفع الجانبي بالاستلقاء لأنه بوضعية حمل الوزن (أقرب للمشي).',
+    mistakes:'إمالة الجذع للجانب المعاكس للتعويض عن ضعف العضلة، استخدام مقاومة عالية جداً تفقد التحكم بالحركة.',
+    contra:'ضعف توازن يمنع الوقوف الآمن على ساق واحدة، كسر حديث بالورك، ألم حاد جانبي بالفخذ غير مُشخَّص.'},
+  {id:'b44', region:'hip', name:'صعود الدرجة (تقوية وظيفية)', nameEn:'Step-Ups',
+    desc:'الوقوف أمام درجة أو منصة منخفضة، والصعود عليها بساق واحدة (مع دفع الوزن من كعب وعضلات المؤخرة والفخذ) ثم النزول ببطء بنفس الساق أو بالتبديل.',
+    sets:'٣ مجموعات × ٨-١٠ تكرارات لكل جانب',
+    correct:'الركبة تتجه في اتجاه أصابع القدم بدون ميل للداخل، البدء بارتفاع منخفض جداً والزيادة تدريجياً، النزول بتحكم كامل (الجزء الأهم وظيفياً).',
+    mistakes:'الدفع بالساق السفلية بدل الساق الصاعدة (يفقد فائدة التمرين)، ميل الركبة للداخل أثناء الصعود أو النزول.',
+    contra:'عدم استقرار الركبة أو الورك الحاد، تقييد حمل الوزن حسب توجيه الجراح بعد الجراحة، ألم حاد أثناء الصعود يستدعي الرجوع لارتفاع أقل أو تمرين أبسط.'},
+
+  /* ===== إضافات الركبة ===== */
+  {id:'b45', region:'knee', name:'فرد الركبة النهائي بالمقاومة', nameEn:'Terminal Knee Extension (TKE)',
+    desc:'ربط شريط مقاومة خلف الركبة (لثني بسيط) والوقوف مع ثني الركبة قليلاً، ثم فرد الركبة بالكامل ضد المقاومة بشد عضلة الفخذ الأمامية، والرجوع ببطء لدرجة الثني البسيطة فقط (مش أكتر).',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار',
+    correct:'مدى الحركة صغير ومحدود (من ثني بسيط لفرد كامل فقط)، تمرين أساسي شائع جداً في تأهيل الرضفة والركبة بعد الإصابات والعمليات لأنه بحمل آمن وقليل الضغط على المفصل.',
+    mistakes:'الثني لمدى كبير جداً (بيزود الضغط على الرضفة بلا داعي لهدف هذا التمرين تحديداً)، عدم الفرد الكامل النهائي للركبة.',
+    contra:'حسب بروتوكول الجراح بعد عمليات معينة قد يُحدَّد مدى الحركة، كسر حديث لم يستقر، ألم حاد أمام الركبة يزداد مع الفرد الكامل.'},
+  {id:'b46', region:'knee', name:'ثني الركبة وقوفاً (تقوية الأوتار الخلفية)', nameEn:'Standing Hamstring Curl',
+    desc:'الوقوف مع الاستناد على كرسي أو حائط، وثني ركبة واحدة للخلف قدر الممكن بجذب الكعب نحو المؤخرة، ثم النزول ببطء.',
+    sets:'٣ مجموعات × ١٢-١٥ تكرار لكل جانب',
+    correct:'الفخذ يبقى ثابتاً وموازياً للساق الأخرى (بدون دفعه للخلف أو الأمام)، حركة الركبة فقط، يمكن إضافة وزن كاحل خفيف للتقدم.',
+    mistakes:'تحريك الفخذ كله للخلف بدل ثني الركبة فقط، حركة سريعة بارتداد بدل تحكم كامل.',
+    contra:'تمزق حاد بعضلات أوتار الركبة الخلفية (يحتاج فترة راحة أولاً)، بعد جراحة الرباط الصليبي إذا كان الوتر الخلفي مصدر الطعم الجراحي حسب بروتوكول الجراح.'},
+  {id:'b47', region:'knee', name:'النزول من درجة المتحكم فيه', nameEn:'Step-Downs (Eccentric Control)',
+    desc:'الوقوف على درجة أو منصة منخفضة بساق واحدة، وإنزال الساق الأخرى ببطء شديد نحو الأرض دون لمسها ثم الرجوع للأعلى، مع الحفاظ على استقامة الركبة والحوض.',
+    sets:'٣ مجموعات × ٨-١٠ تكرارات لكل جانب',
+    correct:'التحكم في النزول البطيء هو جوهر التمرين (تدريب "إكسنتريك" للعضلة)، الركبة تتجه لأصابع القدم بدون ميل للداخل، الحوض يبقى مستوياً.',
+    mistakes:'ميل الركبة للداخل أثناء النزول (علامة شائعة على ضعف عضلات الحوض الجانبية تستدعي العودة لتمارين أبسط أولاً)، النزول السريع بدل التحكم البطيء.',
+    contra:'ألم أمامي حاد بالركبة يزداد مع النزول (شائع في آلام الرضفة الحادة، يحتاج تدرج أبطأ)، عدم استقرار الركبة الحاد، تقييد حمل الوزن بعد الجراحة.'},
+  {id:'b48', region:'knee', name:'تمدد الفخذ الأمامي وقوفاً', nameEn:'Standing Quad Stretch',
+    desc:'الوقوف مع الاستناد على حائط أو كرسي للتوازن، وثني ركبة واحدة للخلف ومسك الكاحل باليد، وسحبه برفق نحو المؤخرة حتى الشعور بتمدد مقدمة الفخذ، مع إبقاء الركبتين متلاصقتين.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية لكل جانب',
+    correct:'الركبتان متجاورتان (الركبة المثنية لا تنفتح للخارج)، الحوض مستقيم بدون تقويس أسفل الظهر للتعويض، تمدد تدريجي هادئ.',
+    mistakes:'تقويس أسفل الظهر بدل الحفاظ على استقامة الحوض، فتح الركبة المثنية للخارج بدل بقائها محاذية للأخرى.',
+    contra:'ألم حاد أمام الركبة عند الثني الكامل (شائع في مشاكل الرضفة، يحتاج تعديل بمدى أقل)، بعد جراحة الركبة حسب قيود مدى الحركة من الجراح.'},
+  {id:'b49', region:'knee', name:'الجلوس الحائطي الثابت', nameEn:'Wall Sit',
+    desc:'الاستناد بالظهر على حائط والنزول لوضعية شبه جلوس (الركبتان بزاوية ٤٥-٩٠ درجة حسب المستوى) والثبات في هذه الوضعية.',
+    sets:'٣ مجموعات × ثبات ١٥-٣٠ ثانية',
+    correct:'الركبتان فوق الكاحلين مباشرة (لا تتجاوزان أصابع القدم للأمام)، تمرين إيزومتري ممتاز لبناء تحمل عضلة الفخذ الأمامية تدريجياً كخطوة متقدمة بعد إتقان القرفصاء الجزئي.',
+    mistakes:'زاوية ثني عميقة جداً من البداية (تزيد ضغط الرضفة بلا داعي)، انزلاق الظهر بعيداً عن الحائط.',
+    contra:'ألم أمامي حاد بالركبة يزداد مع الثبات، عدم استقرار الركبة، تقييد حمل الوزن بعد الجراحة حسب توجيه الجراح.'},
+
+  /* ===== إضافات الكاحل والقدم ===== */
+  {id:'b50', region:'ankle', name:'التوازن على ساق واحدة (الإحساس بالوضع)', nameEn:'Single-Leg Balance (Proprioception)',
+    desc:'الوقوف على القدم المصابة فقط (مع دعم قريب للأمان) والثبات لأطول فترة ممكنة، مع التقدم لاحقاً بإغلاق العينين أو الوقوف على سطح غير مستوٍ.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية',
+    correct:'تمرين أساسي ومهم جداً بعد أي التواء بالكاحل لتقليل خطر تكرار الإصابة (إعادة تدريب الإحساس بوضع المفصل)، البدء بدعم قريب والتقدم تدريجياً بإزالته.',
+    mistakes:'تجاهل هذا التمرين والاكتفاء بالتقوية فقط (أحد أكتر أسباب تكرار التواءات الكاحل)، القفز لمستوى صعب (عين مغلقة/سطح غير مستوٍ) قبل إتقان الأساسي.',
+    contra:'عدم استقرار حاد بالكاحل يمنع الوقوف الآمن، دوخة أو مشاكل توازن عامة غير متعلقة بالكاحل تحتاج تقييم منفصل، كسر لم يُسمح بحمل الوزن عليه بعد.'},
+  {id:'b51', region:'ankle', name:'تجعيد المنشفة بأصابع القدم', nameEn:'Towel Scrunches (Toe Curls)',
+    desc:'الجلوس مع فرد منشفة على الأرض تحت القدم، ومحاولة جذب المنشفة نحو الجسم باستخدام أصابع القدم فقط بحركة "تجعيد" متكررة.',
+    sets:'٢-٣ مجموعات × ١٠-١٥ تكرار',
+    correct:'تمرين مهم لتقوية العضلات الصغيرة الداخلية للقدم (Intrinsic muscles) المسؤولة عن دعم القوس واستقرار القدم، خصوصاً مفيد في التهاب اللفافة الأخمصية.',
+    mistakes:'استخدام حركة الكاحل كله بدل أصابع القدم فقط، سرعة زايدة بدل التركيز على الشد العضلي الدقيق.',
+    contra:'إصابة حادة بأصابع القدم أو كسر فيها، ألم حاد أثناء الحركة يستدعي تقييم إضافي.'},
+  {id:'b52', region:'ankle', name:'أبجدية الكاحل (مدى حركة مبكر لطيف)', nameEn:'Ankle Alphabet',
+    desc:'الجلوس مع رفع القدم قليلاً عن الأرض، ورسم حروف الأبجدية بأصابع القدم في الهواء بتحريك الكاحل فقط، بحركة بطيئة وكاملة المدى المريح.',
+    sets:'مرة واحدة لكل الأبجدية، ١-٢ مرة يومياً',
+    correct:'خيار لطيف جداً ومناسب في الأيام الأولى بعد الإصابة لأنه بيغطي كل اتجاهات حركة الكاحل بحمل خفيف جداً على المفصل.',
+    mistakes:'تحريك الساق كلها بدل الكاحل فقط، الاستعجال بدل الحركة الهادئة الكاملة المدى.',
+    contra:'كسر غير مؤكد الاستقرار، علامات جلطة وريدية عميقة (تورم مفاجئ مع سخونة واحمرار بالساق) — تحويل طبي فوري وليس تمرين، تورم حاد شديد بالساعات الأولى للإصابة (يُفضَّل الراحة والثلج أولاً).'},
+  {id:'b53', region:'ankle', name:'إنزال الكعب الإكسنتريك (بروتوكول ألفريدسون)', nameEn:'Eccentric Heel Drops (Alfredson Protocol)',
+    desc:'الوقوف على حافة درجة بمقدمة القدمين، والارتفاع على أطراف الأصابع بالساقين معاً، ثم نقل الوزن بالكامل على الساق المصابة والنزول ببطء شديد تحت مستوى الدرجة.',
+    sets:'٣ مجموعات × ١٥ تكرار، مرتين يومياً (بروتوكول علاجي محدد وليس تمرين عام)',
+    correct:'هذا تمرين علاجي متخصص لالتهاب/اعتلال وتر أخيل المزمن تحديداً (Achilles Tendinopathy) — الصعود بالساقين معاً والنزول بساق واحدة ببطء شديد هو جوهر البروتوكول، ويُفضَّل تحت إشراف مباشر بسبب دقة تطبيقه.',
+    mistakes:'الخلط بينه وبين رفع الكعبين العادي (فارق جوهري في الهدف والتطبيق)، البدء به في حالة إصابة حادة بدل الاعتلال المزمن.',
+    contra:'قطع أو تمزق حاد بوتر أخيل (هذا التمرين ممنوع تماماً هنا ويستوجب تقييم جراحي فوري بدل التمرين)، الأسابيع الأولى بعد جراحة ترميم الوتر قبل إذن الجراح، ألم حاد مفاجئ أثناء التمرين.'},
+  {id:'b54', region:'ankle', name:'تمدد اللفافة الأخمصية والساق', nameEn:'Plantar Fascia & Calf Stretch',
+    desc:'الجلوس ومد الساق، ولف منشفة أو حزام حول مقدمة القدم، وسحبها برفق نحو الجسم لثني القدم للأعلى حتى الشعور بتمدد أسفل القدم وخلف الساق.',
+    sets:'٣ مجموعات × ثبات ٢٠-٣٠ ثانية',
+    correct:'يجمع بين تمدد اللفافة الأخمصية وعضلة الساق معاً (غالباً مرتبطان في حالات ألم كعب القدم)، مفيد بشكل خاص أول الصباح قبل النزول من السرير في حالات التهاب اللفافة الأخمصية.',
+    mistakes:'السحب بقوة مفاجئة مؤلمة بدل التمدد التدريجي الهادئ، تجاهل تمدد الساق والاكتفاء بالقدم فقط رغم ارتباطهما الوظيفي.',
+    contra:'كسر إجهادي غير مُشخَّص بعظمة الكعب، تمزق حاد باللفافة الأخمصية (ألم مفاجئ حاد كالتمزق)، إصابة أو التهاب حاد نشط بالقدم.'},
+];
+
+/* ================= State ================= */
+let EXERCISES = [];
+let selectedRegions = new Set();
+let favMode = false;
+let searchText = '';
+let selectedExercises = new Set();
+let favorites = new Set();
+let logoDataUrl = null;
+let editingId = null;
+let afImages = [];
+
+/* ================= Storage helpers ================= */
+async function loadStorage(){
+  try{
+    const r = await window.storage.get('pt-exercises', false);
+    EXERCISES = r ? JSON.parse(r.value) : JSON.parse(JSON.stringify(SEED_EXERCISES));
+    if(!r) await saveExercises();
+  }catch(e){ EXERCISES = JSON.parse(JSON.stringify(SEED_EXERCISES)); }
+  try{ const r = await window.storage.get('pt-favorite-ids', false); if(r) favorites = new Set(JSON.parse(r.value)); }catch(e){ favorites = new Set(); }
+}
+async function saveExercises(){ try{ await window.storage.set('pt-exercises', JSON.stringify(EXERCISES), false); }catch(e){} }
+async function saveFavorites(){ try{ await window.storage.set('pt-favorite-ids', JSON.stringify([...favorites]), false); }catch(e){} }
+
+/* Convert a Google Drive share link into a directly-viewable image URL */
+function driveDirectLink(url){
+  if(!url) return null;
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(m && m[1]) return 'https://drive.google.com/uc?export=view&id=' + m[1];
+  return url;
+}
+
+/* ================= Step navigation ================= */
+function showStep(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('panel'+i).classList.toggle('hidden', i!==n);
+    document.getElementById('tabBtn'+i).classList.toggle('active', i===n);
+  });
+  if(n===2) renderExerciseGrid();
+  if(n===3) renderReview();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.getElementById('tabBtn1').addEventListener('click', ()=>showStep(1));
+document.getElementById('tabBtn2').addEventListener('click', ()=>showStep(2));
+document.getElementById('tabBtn3').addEventListener('click', ()=>showStep(3));
+document.getElementById('toStep2').addEventListener('click', ()=>{ showStep(2); });
+document.getElementById('toStep1').addEventListener('click', ()=>showStep(1));
+document.getElementById('toStep2b').addEventListener('click', ()=>showStep(2));
+document.getElementById('toStep3').addEventListener('click', ()=>showStep(3));
+
+/* ================= Logo upload ================= */
+document.getElementById('logoUploadBox').addEventListener('click', ()=>document.getElementById('logoInput').click());
+document.getElementById('logoInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{ logoDataUrl = ev.target.result; document.getElementById('logoUploadText').innerHTML = '<img src="'+logoDataUrl+'"><br>تم رفع الشعار — اضغط للتغيير'; };
+  reader.readAsDataURL(file);
+});
+
+/* ================= Region legend ================= */
+function renderLegend(){
+  const wrap = document.getElementById('regionLegend');
+  wrap.innerHTML = '';
+  const allChip = document.createElement('div');
+  allChip.className = 'region-chip' + (!favMode && selectedRegions.size===0 ? ' active' : '');
+  allChip.innerHTML = '<span>All Regions</span><span class="cnt">'+EXERCISES.length+'</span>';
+  allChip.onclick = ()=>{ favMode=false; selectedRegions.clear(); renderExerciseGrid(); };
+  wrap.appendChild(allChip);
+
+  const favChip = document.createElement('div');
+  favChip.className = 'region-chip fav' + (favMode ? ' active' : '');
+  favChip.innerHTML = '<span>⭐ Favorites</span><span class="cnt">'+favorites.size+'</span>';
+  favChip.onclick = ()=>{ favMode = !favMode; renderExerciseGrid(); };
+  wrap.appendChild(favChip);
+
+  REGIONS.forEach(r=>{
+    const cnt = EXERCISES.filter(e=>e.region===r.key).length;
+    const chip = document.createElement('div');
+    chip.className = 'region-chip' + (selectedRegions.has(r.key) ? ' active' : '');
+    chip.innerHTML = '<span>'+r.label+'</span><span class="cnt">'+cnt+'</span>';
+    chip.onclick = ()=>{
+      favMode = false;
+      if(selectedRegions.has(r.key)) selectedRegions.delete(r.key); else selectedRegions.add(r.key);
+      renderExerciseGrid();
+    };
+    wrap.appendChild(chip);
+  });
+  const hint = document.createElement('p');
+  hint.style.cssText = 'font-size:11.5px; color:var(--ink-soft); margin:6px 2px 0;';
+  hint.textContent = 'تقدر تختار أكتر من منطقة مع بعض';
+  wrap.appendChild(hint);
+}
+document.querySelectorAll('.hotspot').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    favMode = false;
+    const r = el.getAttribute('data-region');
+    if(selectedRegions.has(r)) selectedRegions.delete(r); else selectedRegions.add(r);
+    renderExerciseGrid();
+  });
+});
+function syncBodyMapHighlight(){
+  document.querySelectorAll('.hotspot').forEach(el=>{ el.classList.toggle('active', selectedRegions.has(el.getAttribute('data-region'))); });
+}
+
+/* ================= Search ================= */
+document.getElementById('searchInput').addEventListener('input', (e)=>{ searchText = e.target.value.trim(); renderExerciseGrid(); });
+
+/* ================= Exercise grid ================= */
+function renderExerciseGrid(){
+  renderLegend();
+  syncBodyMapHighlight();
+  const grid = document.getElementById('exGrid');
+  const empty = document.getElementById('exEmpty');
+  grid.innerHTML = '';
+
+  let list = EXERCISES;
+  if(favMode) list = list.filter(e=>favorites.has(e.id));
+  else if(selectedRegions.size>0) list = list.filter(e=>selectedRegions.has(e.region));
+  if(searchText) list = list.filter(e=>e.name.includes(searchText) || (e.nameEn && e.nameEn.toLowerCase().includes(searchText.toLowerCase())));
+
+  empty.classList.toggle('hidden', list.length>0);
+
+  const grouped = (!favMode && !searchText);
+  if(grouped){
+    const byRegion = {};
+    list.forEach(e=>{ (byRegion[e.region] = byRegion[e.region]||[]).push(e); });
+    REGIONS.forEach(r=>{
+      if(!byRegion[r.key]) return;
+      const header = document.createElement('div');
+      header.style.cssText = 'grid-column:1/-1; font-family:\'Markazi Text\',serif; font-size:17px; color:var(--primary-dark); font-weight:700; margin:6px 0 -2px; padding-bottom:4px; border-bottom:1px solid var(--line);';
+      header.textContent = r.label;
+      grid.appendChild(header);
+      byRegion[r.key].forEach(ex=>grid.appendChild(buildExCard(ex)));
+    });
+  } else {
+    list.forEach(ex=>grid.appendChild(buildExCard(ex)));
+  }
+
+  document.getElementById('selCount').textContent = toArabicDigits(selectedExercises.size);
+  document.getElementById('toStep3').disabled = selectedExercises.size===0;
+}
+
+function buildExCard(ex){
+    const card = document.createElement('div');
+    card.className = 'ex-card' + (selectedExercises.has(ex.id) ? ' selected' : '');
+    const imgs = ex.images && ex.images.length ? ex.images : (ex.image ? [ex.image] : []);
+    const thumb = imgs.length ? '<img class="ex-thumb" crossorigin="anonymous" src="'+imgs[0]+'">' : '<div class="ex-thumb-placeholder">🏃</div>';
+    const gallery = imgs.length>1 ? '<div style="display:flex; gap:5px; margin-top:6px;">'+imgs.map(u=>'<img crossorigin="anonymous" src="'+u+'" style="width:32px; height:32px; object-fit:cover; border-radius:6px;" onerror="this.style.display=\'none\'">').join('')+'</div>' : '';
+    const video = ex.video ? '<a class="ex-video" href="'+ex.video+'" target="_blank" onclick="event.stopPropagation()">🎬 فيديو توضيحي</a>' : '';
+    const hasClinical = ex.correct || ex.mistakes || ex.contra;
+    const clinicalBox = hasClinical ?
+      '<div class="clinical-box hidden">'+
+        (ex.correct ? '<p><b>✔ الأداء الصحيح:</b> '+ex.correct+'</p>' : '')+
+        (ex.mistakes ? '<p><b>✘ أخطاء شائعة:</b> '+ex.mistakes+'</p>' : '')+
+        (ex.contra ? '<p class="contra"><b>⚠ ممنوع / علامات خطر:</b> '+ex.contra+'</p>' : '')+
+      '</div>' : '';
+    card.innerHTML =
+      '<div class="fav-star'+(favorites.has(ex.id)?' active':'')+'" data-fid="'+ex.id+'"><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/></svg></div>'+
+      thumb+
+      '<div class="ex-check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M4 12l6 6L20 6"/></svg></div>'+
+      '<div style="flex:1"><div class="ex-name-row"><p class="ex-name" style="margin:0">'+ex.name+'</p>'+(ex.nameEn?'<span class="ex-name-en">'+ex.nameEn+'</span>':'')+'</div>'+
+      '<p class="ex-desc">'+ex.desc+'</p><span class="ex-sets">'+(ex.sets||'')+'</span>'+video+gallery+
+      (hasClinical ? '<span class="info-toggle">عرض التفاصيل الإكلينيكية ▾</span>' : '')+
+      clinicalBox+
+      '</div>';
+    if(hasClinical){
+      card.querySelector('.info-toggle').addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const box = card.querySelector('.clinical-box');
+        box.classList.toggle('hidden');
+        ev.target.textContent = box.classList.contains('hidden') ? 'عرض التفاصيل الإكلينيكية ▾' : 'إخفاء التفاصيل الإكلينيكية ▴';
+      });
+    }
+    card.onclick = ()=>{
+      if(selectedExercises.has(ex.id)) selectedExercises.delete(ex.id);
+      else selectedExercises.add(ex.id);
+      renderExerciseGrid();
+    };
+    card.querySelector('.fav-star').addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      if(favorites.has(ex.id)) favorites.delete(ex.id); else favorites.add(ex.id);
+      saveFavorites();
+      renderExerciseGrid();
+    });
+    return card;
+}
+
+/* ================= Review + PDF ================= */
+function toArabicDigits(n){
+  const map = {'0':'٠','1':'١','2':'٢','3':'٣','4':'٤','5':'٥','6':'٦','7':'٧','8':'٨','9':'٩'};
+  return String(n).split('').map(c=>map[c]!==undefined?map[c]:c).join('');
+}
+function shortTip(text){
+  if(!text) return '';
+  const cut = text.split(/[،.]/)[0].trim();
+  return cut.length > 90 ? cut.slice(0,90).trim()+'…' : cut;
+}
+
+function renderReview(){
+  const clinic = document.getElementById('clinicName').value.trim();
+  const doctor = document.getElementById('doctorName').value.trim();
+  document.getElementById('rcClinic').textContent = clinic || 'برنامج تمارين';
+  document.getElementById('rcDoctor').textContent = doctor || '';
+  document.getElementById('rcPatient').textContent = document.getElementById('patientName').value.trim() || '—';
+  const dv = document.getElementById('durationValue').value.trim();
+  const du = document.getElementById('durationUnit').value;
+  document.getElementById('rcDuration').textContent = dv ? (toArabicDigits(dv)+' '+du) : '—';
+  document.getElementById('rcLogo').innerHTML = logoDataUrl ? '<img src="'+logoDataUrl+'">' : '';
+
+  const list = document.getElementById('rcExList');
+  list.innerHTML = '';
+  let i = 1;
+  EXERCISES.filter(e=>selectedExercises.has(e.id)).forEach(ex=>{
+    const row = document.createElement('div');
+    row.className = 'rc-ex';
+    const imgs = ex.images && ex.images.length ? ex.images : (ex.image ? [ex.image] : []);
+    const img = imgs.length ? imgs.slice(0,2).map(u=>'<img crossorigin="anonymous" src="'+u+'">').join('') : '';
+    const tip = shortTip(ex.correct);
+    row.innerHTML = img+'<div class="idx">'+toArabicDigits(i)+'</div><div><p class="name">'+ex.name+'</p><p class="desc">'+ex.desc+'</p><span class="sets">'+(ex.sets||'')+(ex.video?' — فيديو: '+ex.video:'')+'</span>'+(tip?'<p class="rc-tip">💡 '+tip+'</p>':'')+'</div>';
+    list.appendChild(row);
+    i++;
+  });
+}
+
+async function buildAndDownloadPdf(){
+  const card = document.getElementById('reviewCard');
+  const canvas = await html2canvas(card, {scale:2, backgroundColor:'#ffffff', useCORS:true});
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'pt', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imgWidth = pageWidth;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  let heightLeft = imgHeight, position = 0;
+  pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight;
+  while(heightLeft > 0){
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+  const patient = document.getElementById('patientName').value.trim() || 'مريض';
+  pdf.save('برنامج-تمارين-'+patient+'.pdf');
+}
+
+document.getElementById('printPdf').addEventListener('click', ()=>{ window.print(); });
+
+document.getElementById('downloadPdf').addEventListener('click', async ()=>{
+  const btn = document.getElementById('downloadPdf');
+  const original = btn.textContent; btn.textContent = 'جاري التجهيز...'; btn.disabled = true;
+  await buildAndDownloadPdf();
+  btn.textContent = original; btn.disabled = false;
+});
+
+document.getElementById('sendWhatsapp').addEventListener('click', async ()=>{
+  const btn = document.getElementById('sendWhatsapp');
+  const original = btn.textContent; btn.textContent = 'جاري التجهيز...'; btn.disabled = true;
+  await buildAndDownloadPdf();
+  const patient = document.getElementById('patientName').value.trim() || 'المريض';
+  const dv = document.getElementById('durationValue').value.trim();
+  const du = document.getElementById('durationUnit').value;
+  const names = EXERCISES.filter(e=>selectedExercises.has(e.id)).map(e=>'- '+e.name).join('\n');
+  const msg = 'برنامج تمارين للمريض: '+patient+(dv?('\nالمدة: '+dv+' '+du):'')+'\n\nالتمارين:\n'+names+'\n\n(مرفق ملف الـ PDF بالتفاصيل الكاملة — تم تنزيله الآن)';
+  window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+  btn.textContent = original; btn.disabled = false;
+});
+
+/* ================= Admin: login ================= */
+document.getElementById('openAdminBtn').addEventListener('click', ()=>{
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+  document.getElementById('adminErr').textContent = '';
+  document.getElementById('adminLoginOverlay').classList.remove('hidden');
+});
+document.getElementById('closeAdminLogin').addEventListener('click', ()=>document.getElementById('adminLoginOverlay').classList.add('hidden'));
+document.getElementById('submitAdminLogin').addEventListener('click', ()=>{
+  const u = document.getElementById('adminUser').value.trim();
+  const p = document.getElementById('adminPass').value;
+  if(u==='koko' && p==='lolo'){
+    document.getElementById('adminLoginOverlay').classList.add('hidden');
+    openAdminPanel();
+  } else {
+    document.getElementById('adminErr').textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+  }
+});
+document.getElementById('closeAdmin').addEventListener('click', ()=>{
+  document.getElementById('adminShell').classList.add('hidden');
+  document.getElementById('mainShell').classList.remove('hidden');
+});
+
+/* ================= Admin: panel ================= */
+function openAdminPanel(){
+  document.getElementById('mainShell').classList.add('hidden');
+  document.getElementById('adminShell').classList.remove('hidden');
+  resetAdminForm();
+  renderAdminList();
+}
+function resetAdminForm(){
+  editingId = null; afImages = [];
+  document.getElementById('afName').value = '';
+  document.getElementById('afNameEn').value = '';
+  document.getElementById('afRegion').value = 'neck';
+  document.getElementById('afDesc').value = '';
+  document.getElementById('afSets').value = '';
+  document.getElementById('afVideo').value = '';
+  document.getElementById('afImageLink').value = '';
+  renderAfImageList();
+  document.getElementById('afCorrect').value = '';
+  document.getElementById('afMistakes').value = '';
+  document.getElementById('afContra').value = '';
+  document.getElementById('afSubmit').textContent = 'إضافة التمرين';
+  document.getElementById('adminFormTitle').textContent = 'إضافة تمرين جديد';
+  document.getElementById('afCancelEdit').classList.add('hidden');
+}
+function renderAfImageList(){
+  const wrap = document.getElementById('afImageList');
+  wrap.innerHTML = '';
+  afImages.forEach((url, idx)=>{
+    const chip = document.createElement('div');
+    chip.style.cssText = 'position:relative; width:60px; height:60px;';
+    chip.innerHTML = '<img crossorigin="anonymous" src="'+url+'" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.style.opacity=0.3">'+
+      '<span style="position:absolute; top:-6px; left:-6px; width:20px; height:20px; background:var(--danger); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer;">×</span>';
+    chip.querySelector('span').onclick = ()=>{ afImages.splice(idx,1); renderAfImageList(); };
+    wrap.appendChild(chip);
+  });
+}
+document.getElementById('afAddImage').addEventListener('click', ()=>{
+  const raw = document.getElementById('afImageLink').value.trim();
+  if(!raw) return;
+  afImages.push(driveDirectLink(raw));
+  document.getElementById('afImageLink').value = '';
+  renderAfImageList();
+});
+document.getElementById('afCancelEdit').addEventListener('click', resetAdminForm);
+
+document.getElementById('afSubmit').addEventListener('click', async ()=>{
+  const name = document.getElementById('afName').value.trim();
+  const desc = document.getElementById('afDesc').value.trim();
+  if(!name || !desc){ alert('اكتب اسم ووصف التمرين على الأقل'); return; }
+  const data = {
+    id: editingId || ('e'+Date.now()),
+    region: document.getElementById('afRegion').value,
+    name: name, nameEn: document.getElementById('afNameEn').value.trim(), desc: desc,
+    sets: document.getElementById('afSets').value.trim(),
+    video: document.getElementById('afVideo').value.trim(),
+    images: afImages.slice(),
+    correct: document.getElementById('afCorrect').value.trim(),
+    mistakes: document.getElementById('afMistakes').value.trim(),
+    contra: document.getElementById('afContra').value.trim(),
+  };
+  if(editingId){
+    const idx = EXERCISES.findIndex(e=>e.id===editingId);
+    if(idx>-1) EXERCISES[idx] = data;
+  } else {
+    EXERCISES.push(data);
+  }
+  await saveExercises();
+  resetAdminForm();
+  renderAdminList();
+});
+
+function renderAdminList(){
+  const wrap = document.getElementById('adminList');
+  wrap.innerHTML = '';
+  EXERCISES.forEach(ex=>{
+    const row = document.createElement('div');
+    row.className = 'admin-row';
+    const thumb = (ex.images && ex.images[0]) ? '<img crossorigin="anonymous" src="'+ex.images[0]+'" style="border-radius:8px; object-fit:cover;" onerror="this.style.display=\'none\'">' : '<div class="ex-thumb-placeholder">🏃</div>';
+    const regionLabel = (REGIONS.find(r=>r.key===ex.region)||{}).label || ex.region;
+    row.innerHTML = thumb+'<div class="info"><b>'+ex.name+'</b><span>'+regionLabel+(ex.video?' • فيه فيديو':'')+'</span></div>';
+    const actions = document.createElement('div');
+    actions.className = 'admin-actions-row';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-ghost btn-sm'; editBtn.textContent = 'تعديل';
+    editBtn.onclick = ()=>{
+      editingId = ex.id;
+      document.getElementById('afName').value = ex.name;
+      document.getElementById('afNameEn').value = ex.nameEn || '';
+      document.getElementById('afRegion').value = ex.region;
+      document.getElementById('afDesc').value = ex.desc;
+      document.getElementById('afSets').value = ex.sets || '';
+      document.getElementById('afVideo').value = ex.video || '';
+      document.getElementById('afImageLink').value = '';
+      afImages = (ex.images || []).slice();
+      renderAfImageList();
+      document.getElementById('afCorrect').value = ex.correct || '';
+      document.getElementById('afMistakes').value = ex.mistakes || '';
+      document.getElementById('afContra').value = ex.contra || '';
+      document.getElementById('afSubmit').textContent = 'حفظ التعديل';
+      document.getElementById('adminFormTitle').textContent = 'تعديل تمرين';
+      document.getElementById('afCancelEdit').classList.remove('hidden');
+      window.scrollTo({top:0, behavior:'smooth'});
+    };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger'; delBtn.textContent = 'حذف';
+    delBtn.onclick = async ()=>{
+      if(!confirm('متأكد من حذف "'+ex.name+'"؟')) return;
+      EXERCISES = EXERCISES.filter(e=>e.id!==ex.id);
+      favorites.delete(ex.id); selectedExercises.delete(ex.id);
+      await saveExercises(); await saveFavorites();
+      renderAdminList();
+    };
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+    row.appendChild(actions);
+    wrap.appendChild(row);
+  });
+}
+
+/* ================= Init ================= */
+(async function init(){
+  await loadStorage();
+  renderLegend();
+})();
+</script>
+</body>
+</html>
