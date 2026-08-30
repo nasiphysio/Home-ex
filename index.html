@@ -114,7 +114,7 @@
   .fav-star svg{ width:100%; height:100%; fill:none; stroke:var(--accent); stroke-width:1.8; }
   .fav-star.active svg{ fill:var(--accent); }
 
-  #reviewCard{ background:#fff; border-radius:10px; }
+  #reviewCard{ background:#fff; border-radius:10px; line-height:1.7; }
   .rc-head{ display:flex; justify-content:space-between; align-items:center; gap:14px; padding-bottom:18px; margin-bottom:20px; border-bottom:2px solid var(--primary); }
   .rc-clinic h3{ font-family:'Markazi Text', serif; font-size:22px; margin:0; color:var(--primary-dark); }
   .rc-clinic p{ margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); }
@@ -123,14 +123,16 @@
   .rc-info div span{ display:block; color:var(--ink-soft); font-size:11.5px; margin-bottom:2px; }
   .rc-info div b{ font-size:14.5px; }
   .rc-list-title{ font-family:'Markazi Text', serif; font-size:19px; color:var(--primary-dark); margin:0 0 12px; }
-  .rc-ex{ display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .rc-ex{ display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); align-items:flex-start; }
   .rc-ex:last-child{ border-bottom:none; }
-  .rc-ex img{ width:40px; height:40px; border-radius:7px; object-fit:cover; flex-shrink:0; }
+  .rc-ex .imgs{ display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+  .rc-ex img{ width:44px; height:44px; border-radius:7px; object-fit:cover; flex-shrink:0; display:block; }
   .rc-ex .idx{ width:26px; height:26px; border-radius:50%; background:var(--accent-soft); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px; flex-shrink:0; }
-  .rc-ex .name{ font-weight:700; font-size:14px; margin:0 0 2px; }
-  .rc-ex .desc{ font-size:12.5px; color:var(--ink-soft); margin:0 0 3px; }
-  .rc-ex .sets{ font-size:12px; color:var(--accent); font-weight:700; }
-  .rc-ex .rc-tip{ font-size:11.5px; color:var(--primary-dark); background:#F1F6F3; border-radius:6px; padding:5px 8px; margin:5px 0 0; display:inline-block; }
+  .rc-ex .body{ flex:1; min-width:0; }
+  .rc-ex .name{ font-weight:700; font-size:14.5px; margin:0 0 4px; }
+  .rc-ex .desc{ font-size:13px; color:var(--ink-soft); margin:0 0 5px; line-height:1.6; }
+  .rc-ex .sets{ font-size:12.5px; color:var(--accent); font-weight:700; display:block; margin-bottom:4px; }
+  .rc-ex .rc-tip{ font-size:12px; color:var(--primary-dark); background:#F1F6F3; border-radius:6px; padding:6px 9px; margin:4px 0 0; display:block; line-height:1.5; }
   .rc-footer{ margin-top:22px; padding-top:14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-soft); text-align:center; }
   .whatsapp-note{ font-size:12px; color:var(--ink-soft); margin-top:8px; }
 
@@ -168,12 +170,14 @@
 
   /* ===== Print ===== */
   @media print{
+    @page{ margin: 14mm 12mm; }
     body{ background:#fff; }
     header.top, .tabbar, #panel1, #panel2, .actions, .whatsapp-note, #adminShell, .overlay{ display:none !important; }
     #panel3{ display:block !important; border:none; box-shadow:none; padding:0; }
     #panel3 h2, #panel3 .sub{ display:none; }
     .shell{ max-width:100%; padding:0; }
     #reviewCard{ border:none !important; padding:0 !important; }
+    .rc-ex{ break-inside:avoid; }
   }
 </style>
 </head>
@@ -337,7 +341,10 @@
 <div class="admin-shell hidden" id="adminShell">
   <div class="admin-header">
     <h2>لوحة تحكم التمارين</h2>
-    <button class="btn btn-ghost" id="closeAdmin">→ رجوع لباني البرنامج</button>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-ghost" id="closeAdmin">→ رجوع لباني البرنامج</button>
+      <button class="btn btn-ghost" id="adminLogoutBtn" style="color:var(--danger); border-color:var(--danger);">تسجيل خروج</button>
+    </div>
   </div>
   <div class="panel" style="margin-bottom:22px; border-color:var(--danger);">
     <h2 style="color:var(--danger)">⚠ علامات خطر عامة — إيقاف أي تمرين والتحويل الطبي الفوري</h2>
@@ -757,17 +764,18 @@ let logoDataUrl = null;
 let editingId = null;
 let afImages = [];
 
-/* ================= Storage helpers ================= */
+/* ================= Storage helpers (browser localStorage — works once the file is opened
+   directly in a real browser, which is how this tool is meant to be used/hosted) ================= */
 async function loadStorage(){
   try{
-    const r = await window.storage.get('pt-exercises', false);
-    EXERCISES = r ? JSON.parse(r.value) : JSON.parse(JSON.stringify(SEED_EXERCISES));
-    if(!r) await saveExercises();
+    const raw = localStorage.getItem('pt-exercises');
+    EXERCISES = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(SEED_EXERCISES));
+    if(!raw) saveExercises();
   }catch(e){ EXERCISES = JSON.parse(JSON.stringify(SEED_EXERCISES)); }
-  try{ const r = await window.storage.get('pt-favorite-ids', false); if(r) favorites = new Set(JSON.parse(r.value)); }catch(e){ favorites = new Set(); }
+  try{ const raw = localStorage.getItem('pt-favorite-ids'); if(raw) favorites = new Set(JSON.parse(raw)); }catch(e){ favorites = new Set(); }
 }
-async function saveExercises(){ try{ await window.storage.set('pt-exercises', JSON.stringify(EXERCISES), false); }catch(e){} }
-async function saveFavorites(){ try{ await window.storage.set('pt-favorite-ids', JSON.stringify([...favorites]), false); }catch(e){} }
+function saveExercises(){ try{ localStorage.setItem('pt-exercises', JSON.stringify(EXERCISES)); }catch(e){} }
+function saveFavorites(){ try{ localStorage.setItem('pt-favorite-ids', JSON.stringify([...favorites])); }catch(e){} }
 
 /* Ensure a URL has a protocol prefix so links actually open instead of failing silently */
 function normalizeUrl(url){
@@ -981,9 +989,13 @@ function renderReview(){
     const row = document.createElement('div');
     row.className = 'rc-ex';
     const imgs = ex.images && ex.images.length ? ex.images : (ex.image ? [ex.image] : []);
-    const img = imgs.length ? imgs.slice(0,2).map(u=>'<img crossorigin="anonymous" src="'+u+'">').join('') : '';
+    const imgHtml = imgs.length ? '<div class="imgs">'+imgs.slice(0,3).map(u=>'<img crossorigin="anonymous" src="'+u+'">').join('')+'</div>' : '';
     const tip = shortTip(ex.correct);
-    row.innerHTML = img+'<div class="idx">'+toArabicDigits(i)+'</div><div><p class="name">'+ex.name+'</p><p class="desc">'+ex.desc+'</p><span class="sets">'+(ex.sets||'')+(ex.video?' — فيديو: '+ex.video:'')+'</span>'+(tip?'<p class="rc-tip">💡 '+tip+'</p>':'')+'</div>';
+    row.innerHTML = imgHtml+'<div class="idx">'+toArabicDigits(i)+'</div>'+
+      '<div class="body"><p class="name">'+ex.name+'</p><p class="desc">'+ex.desc+'</p>'+
+      '<span class="sets">'+(ex.sets||'')+(ex.video?' — فيديو: '+ex.video:'')+'</span>'+
+      (tip?'<p class="rc-tip">💡 '+tip+'</p>':'')+
+      '</div>';
     list.appendChild(row);
     i++;
   });
@@ -1031,20 +1043,25 @@ document.getElementById('sendWhatsapp').addEventListener('click', async ()=>{
   const chosen = EXERCISES.filter(e=>selectedExercises.has(e.id));
   const details = chosen.map((e,i)=>{
     let line = (i+1)+'. '+e.name+(e.nameEn?' ('+e.nameEn+')':'');
-    if(e.sets) line += '\n   ' + e.sets;
-    const tip = shortTip(e.correct);
-    if(tip) line += '\n   💡 ' + tip;
-    if(e.video) line += '\n   🎬 ' + e.video;
+    if(e.sets) line += '\n   الجرعة: ' + e.sets;
+    if(e.desc) line += '\n   الطريقة: ' + e.desc;
+    if(e.correct) line += '\n   ✔ الصح: ' + e.correct;
+    if(e.mistakes) line += '\n   ✘ الغلط: ' + e.mistakes;
+    if(e.contra) line += '\n   ⚠ ممنوع لو: ' + e.contra;
+    if(e.video) line += '\n   🎬 فيديو: ' + e.video;
     return line;
   }).join('\n\n');
-  let msg = 'برنامج تمارين للمريض: '+patient+(dv?('\nالمدة: '+dv+' '+du):'')+'\n\nالتمارين:\n\n'+details+'\n\n📎 ملف الـ PDF بالصور والتفاصيل الكاملة اتحمّل دلوقتي — أرفقه هنا يدوياً (واتساب مش بيسمح بإرفاق ملفات أو صور تلقائي من صفحة ويب).';
-  if(msg.length > 3500) msg = msg.slice(0, 3480) + '\n\n(باقي التفاصيل في ملف الـ PDF المرفق)';
+  let msg = 'برنامج تمارين للمريض: '+patient+(dv?('\nالمدة: '+dv+' '+du):'')+'\n\nالتمارين بالتفصيل:\n\n'+details+'\n\n📎 ملف الـ PDF بالصور اتحمّل دلوقتي — أرفقه هنا يدوياً (واتساب مش بيسمح بإرفاق ملفات أو صور تلقائي من صفحة ويب).';
+  if(msg.length > 6000) msg = msg.slice(0, 5950) + '\n\n(باقي التفاصيل في ملف الـ PDF المرفق — الرسالة اتقصت لأن واتساب بيحدد طول الرسالة اللي بتتفتح بلينك)';
   window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
   btn.textContent = original; btn.disabled = false;
 });
 
 /* ================= Admin: login ================= */
+function isAdminAuthed(){ try{ return localStorage.getItem('pt-admin-auth')==='1'; }catch(e){ return false; } }
+
 document.getElementById('openAdminBtn').addEventListener('click', ()=>{
+  if(isAdminAuthed()){ openAdminPanel(); return; }
   document.getElementById('adminUser').value = '';
   document.getElementById('adminPass').value = '';
   document.getElementById('adminErr').textContent = '';
@@ -1055,6 +1072,7 @@ document.getElementById('submitAdminLogin').addEventListener('click', ()=>{
   const u = document.getElementById('adminUser').value.trim();
   const p = document.getElementById('adminPass').value;
   if(u==='koko' && p==='lolo'){
+    try{ localStorage.setItem('pt-admin-auth','1'); }catch(e){}
     document.getElementById('adminLoginOverlay').classList.add('hidden');
     openAdminPanel();
   } else {
@@ -1062,6 +1080,11 @@ document.getElementById('submitAdminLogin').addEventListener('click', ()=>{
   }
 });
 document.getElementById('closeAdmin').addEventListener('click', ()=>{
+  document.getElementById('adminShell').classList.add('hidden');
+  document.getElementById('mainShell').classList.remove('hidden');
+});
+document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
+  try{ localStorage.removeItem('pt-admin-auth'); }catch(e){}
   document.getElementById('adminShell').classList.add('hidden');
   document.getElementById('mainShell').classList.remove('hidden');
 });
@@ -1100,6 +1123,8 @@ function renderAfImageList(){
     chip.querySelector('span').onclick = ()=>{ afImages.splice(idx,1); renderAfImageList(); };
     wrap.appendChild(chip);
   });
+  const label = document.getElementById('afImageUploadText');
+  label.textContent = afImages.length ? ('تم رفع '+toArabicDigits(afImages.length)+' صورة — دوس تاني لإضافة المزيد (مفيش حد أقصى)') : 'اضغط لرفع صورة أو أكتر من الجهاز';
 }
 document.getElementById('afImageUploadBox').addEventListener('click', ()=>document.getElementById('afImageFileInput').click());
 document.getElementById('afImageFileInput').addEventListener('change', async (e)=>{
