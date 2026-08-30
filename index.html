@@ -330,7 +330,7 @@
   <div class="modal">
     <h3>دخول لوحة التحكم</h3>
     <p class="sub">لإضافة أو تعديل التمارين المتاحة</p>
-    <div class="field"><label>اسم المستخدم</label><input type="text" id="adminUser"></div>
+    <div class="field"><label>البريد الإلكتروني</label><input type="text" id="adminUser" placeholder="doctor@example.com"></div>
     <div class="field"><label>كلمة المرور</label><input type="password" id="adminPass"></div>
     <div class="modal-err" id="adminErr"></div>
     <div class="actions"><button class="btn btn-ghost" id="closeAdminLogin">إلغاء</button><button class="btn btn-primary" id="submitAdminLogin">دخول</button></div>
@@ -396,7 +396,28 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDIDA8-KmZ9Pi5JHYjb8E2kgFQNF1_Zy70",
+  authDomain: "homeex-b938a.firebaseapp.com",
+  databaseURL: "https://homeex-b938a-default-rtdb.firebaseio.com",
+  projectId: "homeex-b938a",
+  storageBucket: "homeex-b938a.firebasestorage.app",
+  messagingSenderId: "1045594278633",
+  appId: "1:1045594278633:web:032994a69f62e5206dfe78",
+  measurementId: "G-ZK5ZWBTNH7"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp, "homeex");
+const auth = getAuth(fbApp);
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+let isAdmin = false;
+
 /* ================= Base exercise database ================= */
 const REGIONS = [
   {key:'neck', label:'Neck'}, {key:'shoulder', label:'Shoulder'}, {key:'back', label:'Back'},
@@ -764,17 +785,33 @@ let logoDataUrl = null;
 let editingId = null;
 let afImages = [];
 
-/* ================= Storage helpers (browser localStorage — works once the file is opened
-   directly in a real browser, which is how this tool is meant to be used/hosted) ================= */
+/* ================= Storage helpers ================= */
+/* Exercises live in Firestore (shared, syncs across every device/browser).
+   Favorites stay in the browser's localStorage since they're a personal
+   shortcut for whoever is using this particular device. */
 async function loadStorage(){
   try{
-    const raw = localStorage.getItem('pt-exercises');
-    EXERCISES = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(SEED_EXERCISES));
-    if(!raw) saveExercises();
-  }catch(e){ EXERCISES = JSON.parse(JSON.stringify(SEED_EXERCISES)); }
+    const snap = await getDocs(collection(db, 'exercises'));
+    if(snap.empty){
+      EXERCISES = JSON.parse(JSON.stringify(SEED_EXERCISES));
+      for(const ex of EXERCISES){ await setDoc(doc(db, 'exercises', ex.id), ex); }
+    } else {
+      EXERCISES = snap.docs.map(d => d.data());
+    }
+  }catch(e){
+    console.error('Firestore load failed, falling back to built-in list:', e);
+    EXERCISES = JSON.parse(JSON.stringify(SEED_EXERCISES));
+  }
   try{ const raw = localStorage.getItem('pt-favorite-ids'); if(raw) favorites = new Set(JSON.parse(raw)); }catch(e){ favorites = new Set(); }
 }
-function saveExercises(){ try{ localStorage.setItem('pt-exercises', JSON.stringify(EXERCISES)); }catch(e){} }
+async function saveExerciseDoc(ex){
+  try{ await setDoc(doc(db, 'exercises', ex.id), ex); }
+  catch(e){ console.error('Firestore save failed:', e); alert('حصل خطأ في حفظ التمرين على السيرفر — تأكد إنك متصل بالإنترنت'); }
+}
+async function deleteExerciseDoc(id){
+  try{ await deleteDoc(doc(db, 'exercises', id)); }
+  catch(e){ console.error('Firestore delete failed:', e); alert('حصل خطأ في حذف التمرين من السيرفر — تأكد إنك متصل بالإنترنت'); }
+}
 function saveFavorites(){ try{ localStorage.setItem('pt-favorite-ids', JSON.stringify([...favorites])); }catch(e){} }
 
 /* Ensure a URL has a protocol prefix so links actually open instead of failing silently */
@@ -1057,37 +1094,39 @@ document.getElementById('sendWhatsapp').addEventListener('click', async ()=>{
   btn.textContent = original; btn.disabled = false;
 });
 
-/* ================= Admin: login ================= */
-function isAdminAuthed(){ try{ return localStorage.getItem('pt-admin-auth')==='1'; }catch(e){ return false; } }
-
+/* ================= Admin: login (Firebase Authentication) ================= */
 document.getElementById('openAdminBtn').addEventListener('click', ()=>{
-  if(isAdminAuthed()){ openAdminPanel(); return; }
+  if(isAdmin){ openAdminPanel(); return; }
   document.getElementById('adminUser').value = '';
   document.getElementById('adminPass').value = '';
   document.getElementById('adminErr').textContent = '';
   document.getElementById('adminLoginOverlay').classList.remove('hidden');
 });
 document.getElementById('closeAdminLogin').addEventListener('click', ()=>document.getElementById('adminLoginOverlay').classList.add('hidden'));
-document.getElementById('submitAdminLogin').addEventListener('click', ()=>{
-  const u = document.getElementById('adminUser').value.trim();
-  const p = document.getElementById('adminPass').value;
-  if(u==='koko' && p==='lolo'){
-    try{ localStorage.setItem('pt-admin-auth','1'); }catch(e){}
+document.getElementById('submitAdminLogin').addEventListener('click', async ()=>{
+  const email = document.getElementById('adminUser').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  const btn = document.getElementById('submitAdminLogin');
+  const original = btn.textContent; btn.textContent = 'جاري الدخول...'; btn.disabled = true;
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
     document.getElementById('adminLoginOverlay').classList.add('hidden');
     openAdminPanel();
-  } else {
-    document.getElementById('adminErr').textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+  }catch(e){
+    document.getElementById('adminErr').textContent = 'البريد أو كلمة المرور غير صحيحة';
   }
+  btn.textContent = original; btn.disabled = false;
 });
 document.getElementById('closeAdmin').addEventListener('click', ()=>{
   document.getElementById('adminShell').classList.add('hidden');
   document.getElementById('mainShell').classList.remove('hidden');
 });
-document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
-  try{ localStorage.removeItem('pt-admin-auth'); }catch(e){}
+document.getElementById('adminLogoutBtn').addEventListener('click', async ()=>{
+  try{ await signOut(auth); }catch(e){}
   document.getElementById('adminShell').classList.add('hidden');
   document.getElementById('mainShell').classList.remove('hidden');
 });
+onAuthStateChanged(auth, (user)=>{ isAdmin = !!user; });
 
 /* ================= Admin: panel ================= */
 function openAdminPanel(){
@@ -1158,7 +1197,7 @@ document.getElementById('afSubmit').addEventListener('click', async ()=>{
   } else {
     EXERCISES.push(data);
   }
-  await saveExercises();
+  await saveExerciseDoc(data);
   resetAdminForm();
   renderAdminList();
 });
@@ -1200,7 +1239,7 @@ function renderAdminList(){
       if(!confirm('متأكد من حذف "'+ex.name+'"؟')) return;
       EXERCISES = EXERCISES.filter(e=>e.id!==ex.id);
       favorites.delete(ex.id); selectedExercises.delete(ex.id);
-      await saveExercises(); await saveFavorites();
+      await deleteExerciseDoc(ex.id); saveFavorites();
       renderAdminList();
     };
     actions.appendChild(editBtn); actions.appendChild(delBtn);
