@@ -187,6 +187,20 @@
 </style>
 </head>
 <body>
+<script>
+  // Safety net independent of the Firebase module below: if the page never
+  // finishes initializing (e.g. gstatic.com is blocked by the network or an
+  // ad-blocker), say so clearly instead of leaving a silent blank/stuck page.
+  setTimeout(function(){
+    if(!window.appInitialized){
+      var b = document.getElementById('connBanner');
+      if(b){
+        b.classList.remove('hidden');
+        b.innerHTML = '⚠ <b>الصفحة معلّقة ومش قادرة تكمل التحميل.</b><br>الأسباب الشائعة: الإنترنت ضعيف أو مقطوع، أو إضافة حجب إعلانات/تتبع في المتصفح بتمنع تحميل مكتبة Firebase من gstatic.com. جرّب تقفل أي إضافة حجب إعلانات وتعمل تحديث للصفحة (Refresh).';
+      }
+    }
+  }, 12000);
+</script>
 <div class="shell" id="mainShell">
 
   <header class="top">
@@ -427,6 +441,16 @@ const db = getFirestore(fbApp, "homeex");
 const auth = getAuth(fbApp);
 setPersistence(auth, browserLocalPersistence).catch(()=>{});
 let isAdmin = false;
+
+/* Wrap any Firebase call so it can never hang forever — after N seconds it
+   fails loudly instead of leaving a button stuck on "جاري..." forever. */
+function withTimeout(promise, ms, label){
+  ms = ms || 10000;
+  return Promise.race([
+    promise,
+    new Promise((_, reject)=> setTimeout(()=> reject(new Error('timeout: '+label+' لم يستجب السيرفر خلال '+(ms/1000)+' ثانية — تأكد من الإنترنت ومن الـ Security Rules')), ms))
+  ]);
+}
 
 /* ================= Base exercise database ================= */
 const REGIONS = [
@@ -801,7 +825,7 @@ let afImages = [];
    shortcut for whoever is using this particular device. */
 async function loadStorage(){
   try{
-    const snap = await getDocs(collection(db, 'exercises'));
+    const snap = await withTimeout(getDocs(collection(db, 'exercises')), 10000, 'تحميل التمارين');
     if(snap.empty){
       // Show the built-in list locally but do NOT auto-write anything to the
       // server — writing here (even from a logged-out visitor's browser) is
@@ -831,8 +855,8 @@ async function seedBaseExercisesToServer(){
   const btn = document.getElementById('seedServerBtn');
   const original = btn.textContent; btn.textContent = 'جاري الرفع...'; btn.disabled = true;
   try{
-    for(const ex of SEED_EXERCISES){ await setDoc(doc(db, 'exercises', ex.id), ex); }
-    const snap = await getDocs(collection(db, 'exercises'));
+    for(const ex of SEED_EXERCISES){ await withTimeout(setDoc(doc(db, 'exercises', ex.id), ex), 10000, 'رفع تمرين'); }
+    const snap = await withTimeout(getDocs(collection(db, 'exercises')), 10000, 'تحديث القائمة');
     EXERCISES = snap.docs.map(d => d.data());
     document.getElementById('connBanner').classList.add('hidden');
     showToast('تم رفع القائمة الأساسية للسيرفر بنجاح');
@@ -843,12 +867,12 @@ async function seedBaseExercisesToServer(){
   btn.textContent = original; btn.disabled = false;
 }
 async function saveExerciseDoc(ex){
-  try{ await setDoc(doc(db, 'exercises', ex.id), ex); return true; }
-  catch(e){ console.error('Firestore save failed:', e); showToast('حصل خطأ في الحفظ — تأكد إنك متصل بالإنترنت', true); return false; }
+  try{ await withTimeout(setDoc(doc(db, 'exercises', ex.id), ex), 10000, 'حفظ التمرين'); return true; }
+  catch(e){ console.error('Firestore save failed:', e); showToast('حصل خطأ في الحفظ: '+(e.message||e), true); return false; }
 }
 async function deleteExerciseDoc(id){
-  try{ await deleteDoc(doc(db, 'exercises', id)); return true; }
-  catch(e){ console.error('Firestore delete failed:', e); showToast('حصل خطأ في الحذف — تأكد إنك متصل بالإنترنت', true); return false; }
+  try{ await withTimeout(deleteDoc(doc(db, 'exercises', id)), 10000, 'حذف التمرين'); return true; }
+  catch(e){ console.error('Firestore delete failed:', e); showToast('حصل خطأ في الحذف: '+(e.message||e), true); return false; }
 }
 function saveFavorites(){ try{ localStorage.setItem('pt-favorite-ids', JSON.stringify([...favorites])); }catch(e){} }
 
@@ -1156,11 +1180,13 @@ document.getElementById('submitAdminLogin').addEventListener('click', async ()=>
   const btn = document.getElementById('submitAdminLogin');
   const original = btn.textContent; btn.textContent = 'جاري الدخول...'; btn.disabled = true;
   try{
-    await signInWithEmailAndPassword(auth, email, pass);
+    await withTimeout(signInWithEmailAndPassword(auth, email, pass), 10000, 'تسجيل الدخول');
     document.getElementById('adminLoginOverlay').classList.add('hidden');
     openAdminPanel();
   }catch(e){
-    document.getElementById('adminErr').textContent = 'البريد أو كلمة المرور غير صحيحة';
+    document.getElementById('adminErr').textContent = (e.message && e.message.indexOf('timeout:')===0)
+      ? 'ماحصلش رد من السيرفر — تأكد من الإنترنت وحاول تاني'
+      : 'البريد أو كلمة المرور غير صحيحة';
   }
   btn.textContent = original; btn.disabled = false;
 });
@@ -1311,6 +1337,7 @@ function renderAdminList(){
 (async function init(){
   await loadStorage();
   renderLegend();
+  window.appInitialized = true;
 })();
 </script>
 </body>
