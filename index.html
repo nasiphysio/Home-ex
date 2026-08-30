@@ -177,7 +177,7 @@
   @media print{
     @page{ margin: 14mm 12mm; }
     body{ background:#fff; }
-    header.top, .tabbar, #panel1, #panel2, .actions, .whatsapp-note, #adminShell, .overlay{ display:none !important; }
+    header.top, .tabbar, #connBanner, #panel1, #panel2, .actions, .whatsapp-note, #adminShell, .overlay{ display:none !important; }
     #panel3{ display:block !important; border:none; box-shadow:none; padding:0; }
     #panel3 h2, #panel3 .sub{ display:none; }
     .shell{ max-width:100%; padding:0; }
@@ -206,6 +206,8 @@
       لوحة التحكم
     </div>
   </header>
+
+  <div id="connBanner" class="hidden" style="background:#FBE9E7; border:1.5px solid var(--danger); color:#7A2E22; border-radius:10px; padding:12px 16px; font-size:13px; margin-bottom:16px; line-height:1.7;"></div>
 
   <div class="tabbar" id="tabbar">
     <button class="tab-btn active" id="tabBtn1" data-tab="1"><span class="tab-ico">👤</span> Patient</button>
@@ -808,6 +810,11 @@ async function loadStorage(){
   }catch(e){
     console.error('Firestore load failed, falling back to built-in list:', e);
     EXERCISES = JSON.parse(JSON.stringify(SEED_EXERCISES));
+    const banner = document.getElementById('connBanner');
+    banner.classList.remove('hidden');
+    banner.innerHTML = '⚠ <b>مفيش اتصال بقاعدة البيانات — التمارين المعروضة دلوقتي هي القائمة الأساسية بس، مش اللي على السيرفر (لو حد ضاف تمارين من جهاز تاني مش هتظهر هنا).</b><br>'+
+      'تفاصيل الخطأ التقني: <code>'+(e.code || e.message || String(e))+'</code><br>'+
+      'الأسباب الشائعة: الـ Security Rules لسه منشورة على قاعدة "(default)" بدل "homeex"، أو مفيش إنترنت، أو اسم القاعدة "homeex" مش مطابق بالظبط لما في Firebase Console.';
   }
   try{ const raw = localStorage.getItem('pt-favorite-ids'); if(raw) favorites = new Set(JSON.parse(raw)); }catch(e){ favorites = new Set(); }
 }
