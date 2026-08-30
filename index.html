@@ -1042,7 +1042,7 @@ document.getElementById('sendWhatsapp').addEventListener('click', async ()=>{
   const du = document.getElementById('durationUnit').value;
   const chosen = EXERCISES.filter(e=>selectedExercises.has(e.id));
   const details = chosen.map((e,i)=>{
-    let line = (i+1)+'. '+e.name+(e.nameEn?' ('+e.nameEn+')':'');
+    let line = '*'+(i+1)+'. '+e.name+(e.nameEn?' ('+e.nameEn+')':'')+'*';
     if(e.sets) line += '\n   الجرعة: ' + e.sets;
     if(e.desc) line += '\n   الطريقة: ' + e.desc;
     if(e.correct) line += '\n   ✔ الصح: ' + e.correct;
