@@ -349,6 +349,7 @@
   <div class="admin-header">
     <h2>لوحة تحكم التمارين</h2>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-ghost" id="seedServerBtn">تحميل القائمة الأساسية للسيرفر</button>
       <button class="btn btn-ghost" id="closeAdmin">→ رجوع لباني البرنامج</button>
       <button class="btn btn-ghost" id="adminLogoutBtn" style="color:var(--danger); border-color:var(--danger);">تسجيل خروج</button>
     </div>
@@ -802,8 +803,15 @@ async function loadStorage(){
   try{
     const snap = await getDocs(collection(db, 'exercises'));
     if(snap.empty){
+      // Show the built-in list locally but do NOT auto-write anything to the
+      // server — writing here (even from a logged-out visitor's browser) is
+      // exactly what caused real data loss. Seeding the server is now a
+      // deliberate one-time action the admin triggers from the admin panel.
       EXERCISES = JSON.parse(JSON.stringify(SEED_EXERCISES));
-      for(const ex of EXERCISES){ await setDoc(doc(db, 'exercises', ex.id), ex); }
+      const banner = document.getElementById('connBanner');
+      banner.classList.remove('hidden');
+      banner.innerHTML = 'ℹ <b>قاعدة البيانات على السيرفر فاضية دلوقتي — بتشوف القائمة الأساسية المحلية بس.</b><br>'+
+        'سجّل دخول كأدمن وادوس زرار "تحميل القائمة الأساسية للسيرفر" في لوحة التحكم عشان ترفعها مرة واحدة.';
     } else {
       EXERCISES = snap.docs.map(d => d.data());
     }
@@ -817,6 +825,22 @@ async function loadStorage(){
       'الأسباب الشائعة: الـ Security Rules لسه منشورة على قاعدة "(default)" بدل "homeex"، أو مفيش إنترنت، أو اسم القاعدة "homeex" مش مطابق بالظبط لما في Firebase Console.';
   }
   try{ const raw = localStorage.getItem('pt-favorite-ids'); if(raw) favorites = new Set(JSON.parse(raw)); }catch(e){ favorites = new Set(); }
+}
+async function seedBaseExercisesToServer(){
+  if(!confirm('هيتم رفع الـ ٥٤ تمرين الأساسي للسيرفر. لو في تمارين أساسية عدّلتها قبل كده، التعديل ده هيترجع لشكلها الافتراضي. متأكد؟')) return;
+  const btn = document.getElementById('seedServerBtn');
+  const original = btn.textContent; btn.textContent = 'جاري الرفع...'; btn.disabled = true;
+  try{
+    for(const ex of SEED_EXERCISES){ await setDoc(doc(db, 'exercises', ex.id), ex); }
+    const snap = await getDocs(collection(db, 'exercises'));
+    EXERCISES = snap.docs.map(d => d.data());
+    document.getElementById('connBanner').classList.add('hidden');
+    showToast('تم رفع القائمة الأساسية للسيرفر بنجاح');
+    renderAdminList();
+  }catch(e){
+    showToast('فشل الرفع: '+(e.code || e.message || String(e)), true);
+  }
+  btn.textContent = original; btn.disabled = false;
 }
 async function saveExerciseDoc(ex){
   try{ await setDoc(doc(db, 'exercises', ex.id), ex); return true; }
@@ -1149,6 +1173,7 @@ document.getElementById('adminLogoutBtn').addEventListener('click', async ()=>{
   document.getElementById('adminShell').classList.add('hidden');
   document.getElementById('mainShell').classList.remove('hidden');
 });
+document.getElementById('seedServerBtn').addEventListener('click', seedBaseExercisesToServer);
 onAuthStateChanged(auth, (user)=>{ isAdmin = !!user; });
 
 /* ================= Admin: panel ================= */
