@@ -158,6 +158,11 @@
   .admin-row .info span{ font-size:12px; color:var(--ink-soft); }
   .admin-actions-row{ display:flex; gap:8px; }
 
+  /* ===== Toast notification ===== */
+  #toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--primary-dark); color:#fff; padding:13px 22px; border-radius:10px; font-size:14px; font-weight:700; box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:.25s ease; z-index:100; display:flex; align-items:center; gap:8px; }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  #toast.error{ background:var(--danger); }
+
   /* ===== Clinical info toggle ===== */
   .ex-name-row{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
   .ex-name-en{ font-size:11px; color:var(--ink-soft); font-style:italic; }
@@ -395,6 +400,8 @@
     <div id="adminList"></div>
   </div>
 </div>
+
+<div id="toast"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -805,12 +812,12 @@ async function loadStorage(){
   try{ const raw = localStorage.getItem('pt-favorite-ids'); if(raw) favorites = new Set(JSON.parse(raw)); }catch(e){ favorites = new Set(); }
 }
 async function saveExerciseDoc(ex){
-  try{ await setDoc(doc(db, 'exercises', ex.id), ex); }
-  catch(e){ console.error('Firestore save failed:', e); alert('حصل خطأ في حفظ التمرين على السيرفر — تأكد إنك متصل بالإنترنت'); }
+  try{ await setDoc(doc(db, 'exercises', ex.id), ex); return true; }
+  catch(e){ console.error('Firestore save failed:', e); showToast('حصل خطأ في الحفظ — تأكد إنك متصل بالإنترنت', true); return false; }
 }
 async function deleteExerciseDoc(id){
-  try{ await deleteDoc(doc(db, 'exercises', id)); }
-  catch(e){ console.error('Firestore delete failed:', e); alert('حصل خطأ في حذف التمرين من السيرفر — تأكد إنك متصل بالإنترنت'); }
+  try{ await deleteDoc(doc(db, 'exercises', id)); return true; }
+  catch(e){ console.error('Firestore delete failed:', e); showToast('حصل خطأ في الحذف — تأكد إنك متصل بالإنترنت', true); return false; }
 }
 function saveFavorites(){ try{ localStorage.setItem('pt-favorite-ids', JSON.stringify([...favorites])); }catch(e){} }
 
@@ -818,6 +825,15 @@ function saveFavorites(){ try{ localStorage.setItem('pt-favorite-ids', JSON.stri
 function normalizeUrl(url){
   if(!url) return '';
   return /^https?:\/\//i.test(url) ? url : ('https://' + url);
+}
+
+let toastTimer = null;
+function showToast(msg, isError){
+  const t = document.getElementById('toast');
+  t.textContent = (isError ? '⚠ ' : '✔ ') + msg;
+  t.className = isError ? 'error show' : 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.classList.remove('show'); }, 2800);
 }
 function resizeImageFile(file, maxDim, quality){
   maxDim = maxDim || 900; quality = quality || 0.75;
@@ -1191,13 +1207,20 @@ document.getElementById('afSubmit').addEventListener('click', async ()=>{
     mistakes: document.getElementById('afMistakes').value.trim(),
     contra: document.getElementById('afContra').value.trim(),
   };
+  const wasEditing = !!editingId;
+  const btn = document.getElementById('afSubmit');
+  const original = btn.textContent;
+  btn.textContent = 'جاري الحفظ...'; btn.disabled = true;
+  const ok = await saveExerciseDoc(data);
+  btn.textContent = original; btn.disabled = false;
+  if(!ok) return; // keep the form filled so nothing is lost if it failed
   if(editingId){
     const idx = EXERCISES.findIndex(e=>e.id===editingId);
     if(idx>-1) EXERCISES[idx] = data;
   } else {
     EXERCISES.push(data);
   }
-  await saveExerciseDoc(data);
+  showToast(wasEditing ? 'تم حفظ التعديل بنجاح' : 'تم إضافة التمرين بنجاح');
   resetAdminForm();
   renderAdminList();
 });
@@ -1237,9 +1260,13 @@ function renderAdminList(){
     delBtn.className = 'btn btn-danger'; delBtn.textContent = 'حذف';
     delBtn.onclick = async ()=>{
       if(!confirm('متأكد من حذف "'+ex.name+'"؟')) return;
+      delBtn.textContent = '...'; delBtn.disabled = true;
+      const ok = await deleteExerciseDoc(ex.id);
+      if(!ok){ delBtn.textContent = 'حذف'; delBtn.disabled = false; return; }
       EXERCISES = EXERCISES.filter(e=>e.id!==ex.id);
       favorites.delete(ex.id); selectedExercises.delete(ex.id);
-      await deleteExerciseDoc(ex.id); saveFavorites();
+      saveFavorites();
+      showToast('تم حذف "'+ex.name+'"');
       renderAdminList();
     };
     actions.appendChild(editBtn); actions.appendChild(delBtn);
