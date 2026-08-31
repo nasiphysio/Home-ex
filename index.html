@@ -66,6 +66,18 @@ body.direct-mode .direct-only{display:block}
 @media(max-width:700px){.hero-slides{height:100%}.hero-slide{background-position:center}}
 .site-footer,.footer{padding:12px 8px 18px;text-align:center;font-size:12px;color:#98a2b3}
 .footer a{color:inherit;text-decoration:none}
+</style><style>
+/* HomeEx Stage 1 - Doctor workflow */
+#hxSelectedBar{position:fixed;left:0;right:0;bottom:0;z-index:1000;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid #e5e7eb;
+display:none;justify-content:center;box-shadow:0 -4px 18px rgba(0,0,0,.08)}
+#hxSelectedBar .hx-inner{width:min(760px,100%);display:flex;align-items:center;gap:10px}
+#hxSelectedCount{font-weight:800;flex:1}
+#hxSendBtn{border:0;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer}
+.hx-selected-card{outline:3px solid rgba(37,99,235,.16);box-shadow:0 8px 24px rgba(37,99,235,.10)}
+.hx-select-btn{min-width:120px}
+body{padding-bottom:72px}
+@media(max-width:600px){#hxSelectedBar .hx-inner{gap:7px}#hxSendBtn{padding:11px 13px}.hx-select-btn{min-width:105px}}
 </style></head>
 <body>
 <div class="app">
@@ -626,6 +638,49 @@ async function homeexTrackVisit(){
     if(el)el.textContent=count.toLocaleString("en-US");
   }catch(e){ console.warn("Visit counter unavailable:",e); }
 }
+
+/* Stage 1 selection UX */
+function hxGetSelectedCount(){
+  const selectors=[
+    'input[type="checkbox"]:checked',
+    'input[data-exercise-id]:checked',
+    '.exercise-card input[type="checkbox"]:checked',
+    '.exercise input[type="checkbox"]:checked'
+  ];
+  const set=new Set();
+  document.querySelectorAll(selectors.join(",")).forEach(x=>{
+    const id=x.dataset.exerciseId || x.value || x.closest("[data-exercise-id]")?.dataset.exerciseId || x;
+    set.add(String(id));
+  });
+  return set.size;
+}
+function hxUpdateSelectionBar(){
+  const n=hxGetSelectedCount();
+  const bar=document.getElementById("hxSelectedBar");
+  const count=document.getElementById("hxSelectedCount");
+  const btn=document.getElementById("hxSendBtn");
+  if(count)count.textContent=`${n} Exercise${n===1?"":"s"} Selected`;
+  if(btn)btn.textContent=`Send to Patient (${n})`;
+  if(bar)bar.style.display=n?"flex":"none";
+}
+document.addEventListener("change",e=>{
+  if(e.target && e.target.matches('input[type="checkbox"]')) hxUpdateSelectionBar();
+});
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".hx-select-btn,[data-select-exercise]");
+  if(b) setTimeout(hxUpdateSelectionBar,50);
+  if(e.target.closest("#hxSendBtn")){
+    const existing=document.querySelector('[id*="send" i],[class*="send" i]');
+    if(existing && existing.id!=="hxSendBtn"){ existing.click(); return; }
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+});
+window.addEventListener("load",hxUpdateSelectionBar);
 </script>
-<footer class="footer"><a href="mailto:ahmed4nassef@gmail.com">Contact Us</a><span style="margin:0 7px">•</span><a href="mailto:ahmed4nassef@gmail.com">ahmed4nassef@gmail.com</a><span style="margin:0 7px">•</span><span>Visits: <b id="visitCount">—</b></span></footer></body>
+<footer class="footer"><a href="mailto:ahmed4nassef@gmail.com">Contact Us</a><span style="margin:0 7px">•</span><a href="mailto:ahmed4nassef@gmail.com">ahmed4nassef@gmail.com</a><span style="margin:0 7px">•</span><span>Visits: <b id="visitCount">—</b></span></footer><div id="hxSelectedBar" aria-live="polite">
+  <div class="hx-inner">
+    <div id="hxSelectedCount">0 Exercises Selected</div>
+    <button id="hxSendBtn" type="button">Send to Patient (0)</button>
+  </div>
+</div></body>
 </html>
