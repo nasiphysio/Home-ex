@@ -156,6 +156,7 @@ const fallbackExercises=[
 ];
 
 let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null,adminCheckError="";\nlet patientMediaLink=window.location.href.split("#")[0];
+let directExerciseNumbers=null;
 const galleryIndex=new Map();
 const $=id=>document.getElementById(id);
 
@@ -182,9 +183,10 @@ function exerciseNumber(e){return Number(e.number)||999999;}
 function sortedExercises(list){return [...list].sort((a,b)=>exerciseNumber(a)-exerciseNumber(b));}
 function imageList(e){return(e.images||[]).map(driveToImageUrl).filter(Boolean);}
 function filteredExercises(){
-let list=exercises;
-if(searchNumbers&&searchNumbers.size)list=list.filter(e=>searchNumbers.has(exerciseNumber(e)));
+let list=[...exercises];
 if(activeRegions.size)list=list.filter(e=>activeRegions.has(e.region));
+if(searchNumbers)list=list.filter(e=>searchNumbers.has(exerciseNumber(e)));
+if(directExerciseNumbers)list=list.filter(e=>directExerciseNumbers.includes(exerciseNumber(e)));
 return sortedExercises(list);
 }
 function renderRegions(){
@@ -229,6 +231,14 @@ document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.datas
 ["exerciseTab","sendTab","adminTab"].forEach(id=>$(id).classList.toggle("hidden",id!==tabId));
 if(tabId==="sendTab")renderSend();
 if(tabId==="adminTab")renderAdmin();
+}
+function getDirectExerciseNumbers(){
+try{
+const raw=new URLSearchParams(window.location.search).get("ex");
+if(!raw)return null;
+const nums=raw.split(/[,\s]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0);
+return [...new Set(nums)];
+}catch(e){return null;}
 }
 async function loadExercises(){
 try{
@@ -450,16 +460,17 @@ const raw=$("exerciseSearch").value.trim();if(!raw){searchNumbers=null;renderExe
 const nums=raw.split(/[\s,;]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0);searchNumbers=nums.length?new Set(nums):new Set([-1]);renderExercises();
 }
 function whatsapp(){
-const patient=$("patientName").value.trim(),list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));
+const patient=$("patientName").value.trim();
+const list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));
 if(!list.length){alert("Select at least one exercise.");return;}
-
-const numbers=list.map(e=>exerciseNumber(e)).join(" ");
-let text=`ابحث بالارقام الاتية:\n${numbers}\n\n`;
-if(patient)text+=`برنامج التمارين للمريض: ${patient}\n\n`;
-
-list.forEach(e=>{
-text+=`${exerciseNumber(e)} - ${e.name}\n`;
-text+=`${e.description}\n\n`;
+const numbers=list.map(e=>exerciseNumber(e)).join(",");
+const base=patientMediaLink.replace(/#.*$/,"").replace(/\/$/,"");
+const directLink=`${base}/?ex=${encodeURIComponent(numbers)}`;
+let text=`Home Exercise Program${patient?` for ${patient}`:""}\n\n`;
+text+=`Exercises: ${list.map(e=>exerciseNumber(e)).join(" ")}\n\n`;
+list.forEach(e=>{text+=`${exerciseNumber(e)} - ${e.name}\n${e.description}\n\n`;});
+text+=`Open this link to view the selected exercises directly:\n${directLink}`;
+window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
 });
 
 text+=`لمشاهدة الصور او الفيديوهات، افتح اللينك ده:\n${patientMediaLink}`;
@@ -495,7 +506,7 @@ console.warn("Signed-in user is not confirmed as admin:",adminCheckError);
 }
 });
 
-loadSettings().then(()=>loadExercises());
+directExerciseNumbers=getDirectExerciseNumbers();loadSettings().then(()=>loadExercises());
 </script>
 </body>
 </html>
