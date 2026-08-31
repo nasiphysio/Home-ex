@@ -109,13 +109,20 @@ main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display
 <form id="exerciseForm">
 <input id="exerciseId" type="hidden">
 <div class="form-grid">
-<div class="field"><label>Exercise number</label><input id="fNumber" type="number" min="1" readonly></div>
+<div class="field"><label>Exercise number</label><input id="fNumber" type="number" min="1" readonly><small style="display:block;margin-top:6px;color:#667085">Added automatically. You cannot change it.</small></div>
 <div class="field"><label>Exercise name</label><input id="fName" required></div>
 <div class="field"><label>Body region</label><select id="fRegion" required>
 <option>Shoulder</option><option>Elbow</option><option>Wrist / Hand</option><option>Neck</option><option>Upper Back</option><option>Lower Back</option><option>Hip</option><option>Knee</option><option>Ankle / Foot</option><option>Core</option><option>Whole Body</option>
 </select></div>
 <div class="field full"><label>Short description / instructions</label><textarea id="fDescription" required></textarea></div>
-<div class="field full"><label>Image URLs — one per line</label><textarea id="fImages" placeholder="Google Drive share links are supported. Put one image link on each line."></textarea></div>
+<div class="field full">
+<label>Exercise images</label>
+<div id="imageInputs"></div>
+<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+<button type="button" class="btn btn-outline" id="addImageBtn">+ Add another image</button>
+<span style="font-size:12px;color:#667085">Add as many images as you need. Google Drive share links are supported.</span>
+</div>
+</div>
 <div class="field full"><label>Video explanation URL</label><input id="fVideo" placeholder="https://youtube.com/..."></div>
 </div>
 <div class="form-actions"><button type="button" class="btn btn-outline" data-close="exerciseModal">Cancel</button><button class="btn btn-primary" type="submit">Save exercise</button></div>
@@ -215,13 +222,13 @@ async function loadExercises(){
 try{
 const snap=await getDocs(query(collection(db,"exercises"),orderBy("number","asc")));
 exercises=snap.docs.map(d=>({id:d.id,...d.data()}));
-if(!exercises.length)exercises=fallbackExercises;
+if(!exercises.length)exercises=[];
 }catch(err){
 console.warn("Firestore load:",err);
 try{
 const snap=await getDocs(collection(db,"exercises"));
 exercises=snap.docs.map(d=>({id:d.id,...d.data()}));
-}catch(e){exercises=fallbackExercises;$("exerciseSummary").textContent="Demo exercises are shown until Firestore is available.";}
+}catch(e){exercises=[];$("exerciseSummary").textContent="Could not load exercises from Firestore.";console.error("Firestore exercises load failed:",e);}
 }
 exercises=sortedExercises(exercises);renderRegions();renderExercises();renderSend();
 }
@@ -267,23 +274,86 @@ document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openExerciseMo
 async function nextExerciseNumber(){
 const nums=exercises.map(exerciseNumber).filter(n=>Number.isFinite(n)&&n<999999);return nums.length?Math.max(...nums)+1:1;
 }
+function addImageInput(value=""){
+const wrap=document.createElement("div");
+wrap.className="image-input-row";
+wrap.style.cssText="display:flex;gap:8px;margin-top:8px;align-items:center";
+const input=document.createElement("input");
+input.type="url";
+input.className="exercise-image-input";
+input.placeholder="https://drive.google.com/... or direct image URL";
+input.value=value||"";
+input.style.flex="1";
+const remove=document.createElement("button");
+remove.type="button";
+remove.className="btn btn-danger";
+remove.textContent="Remove";
+remove.onclick=()=>wrap.remove();
+wrap.appendChild(input);
+wrap.appendChild(remove);
+$("imageInputs").appendChild(wrap);
+}
+function getImageInputs(){
+return [...document.querySelectorAll(".exercise-image-input")].map(i=>i.value.trim()).filter(Boolean);
+}
 function openExerciseModal(id=null){
-$("exerciseForm").reset();$("exerciseId").value="";$("formNotice").innerHTML="";
+$("exerciseForm").reset();
+$("exerciseId").value="";
+$("formNotice").innerHTML="";
+$("imageInputs").innerHTML="";
 $("exerciseModalTitle").textContent=id?"Edit exercise":"Add exercise";
 if(id){
-const e=exercises.find(x=>x.id===id);if(!e)return;
-$("exerciseId").value=e.id;$("fNumber").value=exerciseNumber(e);$("fName").value=e.name||"";$("fRegion").value=e.region||"Shoulder";$("fDescription").value=e.description||"";$("fImages").value=(e.images||[]).join("\n");$("fVideo").value=e.video||"";
-}else{$("fNumber").value=nextExerciseNumber();}
+const e=exercises.find(x=>x.id===id);
+if(!e)return;
+$("exerciseId").value=e.id;
+$("fNumber").value=exerciseNumber(e);
+$("fName").value=e.name||"";
+$("fRegion").value=e.region||"Shoulder";
+$("fDescription").value=e.description||"";
+const imgs=Array.isArray(e.images)?e.images:[];
+(imgs.length?imgs:[""]).forEach(addImageInput);
+$("fVideo").value=e.video||"";
+}else{
+$("fNumber").value="";
+nextExerciseNumber().then(n=>$("fNumber").value=n);
+addImageInput();
+}
 $("exerciseModal").classList.remove("hidden");
 }
 async function saveExercise(ev){
-ev.preventDefault();if(!isAdmin){$("formNotice").innerHTML=`<div class="notice error">Admin access required.</div>`;return;}
-const id=$("exerciseId").value.trim(),number=Number($("fNumber").value)||await nextExerciseNumber();
-const payload={number,name:$("fName").value.trim(),region:$("fRegion").value,description:$("fDescription").value.trim(),images:$("fImages").value.split("\n").map(x=>x.trim()).filter(Boolean),video:$("fVideo").value.trim(),updatedAt:serverTimestamp()};
+ev.preventDefault();
+if(!isAdmin){
+$("formNotice").innerHTML=`<div class="notice error">Admin access required.</div>`;
+return;
+}
+const id=$("exerciseId").value.trim();
+const number=id?Number($("fNumber").value):await nextExerciseNumber();
+const name=$("fName").value.trim();
+const description=$("fDescription").value.trim();
+const images=getImageInputs();
+if(!name){
+$("formNotice").innerHTML=`<div class="notice error">Please enter the exercise name.</div>`;
+return;
+}
+if(!description){
+$("formNotice").innerHTML=`<div class="notice error">Please enter the instructions.</div>`;
+return;
+}
+if(!images.length){
+$("formNotice").innerHTML=`<div class="notice error">Please add at least one exercise image.</div>`;
+return;
+}
+const payload={number,name,region:$("fRegion").value,description,images,video:$("fVideo").value.trim(),updatedAt:serverTimestamp()};
 try{
-if(id)await updateDoc(doc(db,"exercises",id),payload);else{payload.createdAt=serverTimestamp();await addDoc(collection(db,"exercises"),payload);}
-$("exerciseModal").classList.add("hidden");await loadExercises();renderAdmin();
-}catch(e){console.error(e);$("formNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
+if(id)await updateDoc(doc(db,"exercises",id),payload);
+else{payload.createdAt=serverTimestamp();await addDoc(collection(db,"exercises"),payload);}
+$("exerciseModal").classList.add("hidden");
+await loadExercises();
+renderAdmin();
+}catch(e){
+console.error(e);
+$("formNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;
+}
 }
 async function deleteExercise(id){
 if(!isAdmin||!confirm("Delete this exercise?"))return;
@@ -348,7 +418,7 @@ $("clearFilters").onclick=()=>{activeRegions.clear();renderRegions();renderExerc
 $("searchBtn").onclick=parseSearchNumbers;$("clearSearchBtn").onclick=()=>{$("exerciseSearch").value="";searchNumbers=null;renderExercises();};
 $("exerciseSearch").addEventListener("keydown",e=>{if(e.key==="Enter")parseSearchNumbers();});
 $("backBtn").onclick=()=>switchTab("exerciseTab");$("whatsappBtn").onclick=whatsapp;$("pdfBtn").onclick=makePdf;$("adminOpenBtn").onclick=showAdmin;$("loginBtn").onclick=login;
-$("exerciseForm").addEventListener("submit",saveExercise);document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
+$("exerciseForm").addEventListener("submit",saveExercise);$("addImageBtn").onclick=()=>addImageInput();document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
 $("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
 
 onAuthStateChanged(auth,async user=>{
