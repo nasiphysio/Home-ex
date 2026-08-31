@@ -86,7 +86,7 @@ body{padding-bottom:170px!important}
 <div class="hero-slides" id="heroSlides"><div class="hero-overlay"></div></div>
 <div class="header-inner">
 <div class="brand">
-<div><h1>Home Exercise Prescription</h1><p>Choose exercises, then send the prescription to your patient.</p></div>
+<div><h1 id="homeLink" style="cursor:pointer">Home Exercise Prescription</h1><p>Choose exercises, then send the prescription to your patient.</p></div>
 <button class="admin-btn" id="adminOpenBtn">Admin</button>
 </div>
 </div>
@@ -596,7 +596,12 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>switchTab(t.dataset.t
 $("clearFilters").onclick=()=>{activeRegions.clear();renderRegions();renderExercises();};
 $("searchBtn").onclick=parseSearchNumbers;$("clearSearchBtn").onclick=()=>{$("exerciseSearch").value="";searchNumbers=null;renderExercises();};
 $("exerciseSearch").addEventListener("keydown",e=>{if(e.key==="Enter")parseSearchNumbers();});
-$("backBtn").onclick=()=>switchTab("exerciseTab");$("whatsappBtn").onclick=whatsapp;$("pdfBtn").onclick=makePdf;$("adminOpenBtn").onclick=showAdmin;$("loginBtn").onclick=login;
+$("backBtn").onclick=()=>switchTab("exerciseTab");$("whatsappBtn").onclick=whatsapp;$("pdfBtn").onclick=makePdf;$("adminOpenBtn").onclick=showAdmin;$("footerAdminBtn").onclick=showAdmin;$("loginBtn").onclick=login;
+$("homeLink").onclick=()=>{
+const u=new URL(window.location.href);
+u.search="";u.hash="";
+window.location.href=u.href;
+};
 $("exerciseForm").addEventListener("submit",saveExercise);$("addImageBtn").onclick=()=>addImageInput();document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
 $("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
 
