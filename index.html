@@ -13,8 +13,7 @@
 :root{--bg:#f6f8fb;--card:#fff;--text:#172033;--muted:#667085;--primary:#2563eb;--primary-dark:#1d4ed8;--border:#e5e7eb;--danger:#dc2626;--success:#059669;--shadow:0 10px 30px rgba(16,24,40,.07);--radius:18px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
 button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}.app{min-height:100vh}
-header{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;padding:28px 20px 92px}.header-inner{max-width:1180px;margin:auto}
-.brand{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.brand h1{font-size:28px;margin:0 0 7px}.brand p{margin:0;color:#cbd5e1}
+header{position:relative;overflow:hidden;background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;padding:28px 20px 92px;min-height:190px}.header-inner{max-width:1180px;margin:auto;position:relative;z-index:2}.hero-slides{position:absolute;inset:0;z-index:0}.hero-slide{position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;opacity:0;transition:opacity .8s ease}.hero-slide.active{opacity:1}.hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(15,23,42,.78),rgba(30,58,138,.58))}.brand{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.brand h1{font-size:28px;margin:0 0 7px}.brand p{margin:0;color:#e2e8f0}
 .admin-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:11px 17px;border-radius:12px}
 .tabs-wrap{position:sticky;top:0;z-index:50;margin:-58px auto 0;max-width:1180px;padding:0 20px}.tabs{display:flex;gap:8px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);padding:8px;border:1px solid var(--border);box-shadow:var(--shadow);border-radius:16px}
 .tab{flex:1;border:0;background:transparent;padding:13px 16px;border-radius:11px;font-weight:800;color:var(--muted)}.tab.active{background:#eff6ff;color:var(--primary)}
@@ -44,10 +43,25 @@ body.direct-mode #regions{display:none!important}
 body.direct-mode .select-wrap,
 body.direct-mode input[type="checkbox"]{display:none!important}
 body.direct-mode .direct-only{display:block}
-</style></head>
+</style>
+<style>
+.ad-slot{margin:10px 0 24px;min-height:0;border:1px solid rgba(148,163,184,.18);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 18px rgba(15,23,42,.05)}
+.ad-slot img{display:block;width:100%;height:110px;object-fit:cover}
+.ad-label{padding:5px 10px;text-align:right;font-size:10px;color:#98a2b3;background:#fff}
+.settings-grid{display:grid;gap:16px}
+.settings-card{margin-top:16px;border:1px solid var(--border);border-radius:16px;padding:18px;background:#fff}
+.settings-card h3{margin:0 0 5px;font-size:18px}
+.settings-card p{margin:0 0 12px;color:#667085;font-size:13px}
+.settings-textarea{min-height:110px;width:100%;resize:vertical}
+.footer a{color:#98a2b3;text-decoration:none}
+.footer a:hover{text-decoration:underline}
+@media(max-width:700px){.ad-slot img{height:85px}.hero-slide{background-position:center}}
+</style>
+</head>
 <body>
 <div class="app">
 <header>
+<div class="hero-slides" id="heroSlides"><div class="hero-overlay"></div></div>
 <div class="header-inner">
 <div class="brand">
 <div><h1>Home Exercise Prescription</h1><p>Choose exercises, then send the prescription to your patient.</p></div>
@@ -75,6 +89,7 @@ body.direct-mode .direct-only{display:block}
 <div class="section-head"><div><h2>Body regions</h2><p>Select one or more areas to see suitable home exercises.</p></div><button class="btn btn-outline no-print" id="clearFilters">Clear</button></div>
 <div class="regions" id="regions"></div>
 
+<div id="adSlot" class="ad-slot" style="display:none"></div>
 <div class="section-head"><div><h2>Exercises</h2><p id="exerciseSummary">Loading...</p></div></div>
 <div class="exercise-grid" id="exerciseGrid"></div>
 </section>
@@ -99,7 +114,7 @@ body.direct-mode .direct-only{display:block}
 <div id="adminContent"></div>
 </section>
 </main>
-<div class="footer">Firebase Firestore • GitHub Pages compatible</div>
+<div class="footer">Firebase Firestore • GitHub Pages compatible • <a href="mailto:ahmed4nassef@gmail.com">Contact Us</a></div>
 </div>
 
 <div class="modal hidden" id="loginModal">
@@ -168,7 +183,7 @@ const fallbackExercises=[
 
 let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null,adminCheckError="";
 let patientMediaLink=window.location.href.split("#")[0];
-let directExerciseNumbers=null;
+let directExerciseNumbers=null,heroImageLinks=[],adImageLinks=[],heroTimer=null,adTimer=null;
 const galleryIndex=new Map();
 const $=id=>document.getElementById(id);
 
@@ -305,25 +320,42 @@ setTimeout(()=>$("loginEmail").focus(),50);
 async function loadSettings(){
 try{
 const snap=await getDoc(doc(db,"settings","main"));
-if(snap.exists() && snap.data().patientMediaLink){
-patientMediaLink=String(snap.data().patientMediaLink).trim()||window.location.href.split("#")[0];
+if(snap.exists()){
+const d=snap.data();
+heroImageLinks=Array.isArray(d.heroImages)?d.heroImages.filter(Boolean):[];
+adImageLinks=Array.isArray(d.adImages)?d.adImages.filter(Boolean):[];
 }
-}catch(e){
-console.warn("Settings load failed:",e);
+}catch(e){console.warn("Settings load failed:",e);}
+renderHero();renderAd();
 }
-}
-async function savePatientMediaLink(){
+function settingLines(values){return (values||[]).join("\n");}
+function parseLines(value){return String(value||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);}
+async function saveSiteSettings(){
 if(!isAdmin)return;
-const value=$("patientMediaLink").value.trim();
-if(!value){alert("Please enter the patient media/search link.");return;}
+const hero=parseLines($("heroImageLinks").value), ads=parseLines($("adImageLinks").value);
 try{
-await setDoc(doc(db,"settings","main"),{patientMediaLink:value,updatedAt:serverTimestamp()},{merge:true});
-patientMediaLink=value;
-$("settingsNotice").innerHTML=`<div class="notice success">Link saved successfully.</div>`;
+await setDoc(doc(db,"settings","main"),{heroImages:hero,adImages:ads,updatedAt:serverTimestamp()},{merge:true});
+heroImageLinks=hero;adImageLinks=ads;renderHero();renderAd();
+$("siteSettingsNotice").innerHTML=`<div class="notice success">Site settings saved successfully.</div>`;
 }catch(e){
-console.error(e);
-$("settingsNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;
+console.error(e);$("siteSettingsNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;
 }
+}
+function renderHero(){
+const box=$("heroSlides");if(!box)return;
+const old=box.querySelectorAll(".hero-slide");old.forEach(x=>x.remove());
+const imgs=(heroImageLinks||[]).map(driveToImageUrl).filter(Boolean);
+imgs.forEach((src,i)=>{const s=document.createElement("div");s.className="hero-slide"+(i===0?" active":"");s.style.backgroundImage=`url("${src.replace(/"/g,'\\"')}")`;s.onerror=()=>{};box.insertBefore(s,box.firstChild);});
+if(heroTimer){clearInterval(heroTimer);heroTimer=null;}
+if(imgs.length>1){let i=0;heroTimer=setInterval(()=>{const slides=[...box.querySelectorAll(".hero-slide")];if(!slides.length)return;slides[i].classList.remove("active");i=(i+1)%slides.length;slides[i].classList.add("active");},4000);}
+}
+function renderAd(){
+const box=$("adSlot");if(!box)return;
+const imgs=(adImageLinks||[]).map(driveToImageUrl).filter(Boolean);
+if(!imgs.length){box.style.display="none";box.innerHTML="";if(adTimer){clearInterval(adTimer);adTimer=null;}return;}
+box.style.display="block";let i=0;
+const paint=()=>{box.innerHTML=`<div class="ad-label">Advertisement</div><img src="${escapeHtml(imgs[i])}" alt="Advertisement" onerror="this.style.display='none'">`;};
+paint();if(adTimer){clearInterval(adTimer);adTimer=null;}if(imgs.length>1){adTimer=setInterval(()=>{i=(i+1)%imgs.length;paint();},6000);}
 }
 function renderAdmin(){
 if(!isAdmin){$("adminContent").innerHTML=`<div class="empty">Admin access required. Please log in from the Admin button.</div>`;return;}
@@ -331,12 +363,15 @@ const list=sortedExercises(exercises.filter(e=>!String(e.id).startsWith("demo"))
 $("adminContent").innerHTML=`<div class="admin-panel">
 <div class="admin-toolbar"><div><strong>Exercise library</strong><div style="color:#667085;font-size:13px">${list.length} Firestore exercises</div></div>
 <div style="display:flex;gap:8px"><button class="btn btn-primary" id="addExerciseBtn">+ Add exercise</button><button class="btn btn-outline" id="logoutBtn">Logout</button></div></div>
-
-
-
+<div class="settings-card"><h3>Website appearance</h3><p>Paste Google Drive image links, one per line. The top images rotate every 4 seconds. If you add several ad images, they rotate automatically too.</p>
+<div class="settings-grid">
+<div class="field"><label>Top header images</label><textarea id="heroImageLinks" class="settings-textarea" placeholder="Google Drive image link — one per line">${escapeHtml(settingLines(heroImageLinks))}</textarea><small style="display:block;margin-top:6px;color:#667085">Keep the same header size. Drive files must be shared as “Anyone with the link”.</small></div>
+<div class="field"><label>Advertisement images</label><textarea id="adImageLinks" class="settings-textarea" placeholder="Google Drive image link — one per line">${escapeHtml(settingLines(adImageLinks))}</textarea><small style="display:block;margin-top:6px;color:#667085">The ad stays in its own small space and never covers exercises.</small></div>
+<div><button class="btn btn-primary" id="saveSiteSettingsBtn">Save appearance</button></div><div id="siteSettingsNotice"></div>
+</div></div>
 <div class="admin-list">${list.map(e=>`<div class="admin-row"><div class="meta"><div class="admin-number">#${exerciseNumber(e)}</div><img src="${escapeHtml(imageList(e)[0]||"https://via.placeholder.com/300x200?text=Exercise")}" alt=""><div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(e.region)}</div></div></div><div class="admin-row-actions"><button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button><button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button></div></div>`).join("")||`<div class="empty">No Firestore exercises yet. Add your first one.</div>`}</div></div>`;
 $("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");};
-$("savePatientMediaLinkBtn").onclick=savePatientMediaLink;
+$("saveSiteSettingsBtn").onclick=saveSiteSettings;
 document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openExerciseModal(b.dataset.edit));document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteExercise(b.dataset.delete));
 }
 async function nextExerciseNumber(){
@@ -521,6 +556,8 @@ document.body.classList.add("direct-mode");
 switchTab("exerciseTab");
 }
 loadSettings().then(()=>loadExercises());
+
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(e=>console.warn("Service worker registration failed",e)));}
 </script>
 </body>
 </html>
