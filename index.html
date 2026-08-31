@@ -35,16 +35,14 @@ main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display
 </style>
 <style>
 .direct-only{display:none}
-body.direct-mode .direct-only{display:block}
+body.direct-mode #adminBtn,
+body.direct-mode .tabbar,
 body.direct-mode #searchBox,
-body.direct-mode #regions,
-body.direct-mode #sendTab,
-body.direct-mode .tabbar .tab[data-tab="sendTab"],
-body.direct-mode .hero .admin-btn{display:none!important}
-body.direct-mode .exercise-card .select-wrap,
-body.direct-mode .exercise-card input[type="checkbox"]{display:none!important}
-</style>
-</head>
+body.direct-mode #regions{display:none!important}
+body.direct-mode .select-wrap,
+body.direct-mode input[type="checkbox"]{display:none!important}
+body.direct-mode .direct-only{display:block}
+</style></head>
 <body>
 <div class="app">
 <header>
@@ -207,10 +205,6 @@ document.querySelectorAll(".region").forEach(btn=>btn.onclick=()=>{let r=btn.dat
 }
 function renderExercises(){
 const list=filteredExercises();
-if(directExerciseNumbers){
-const title=$("exerciseSummary");
-if(title)title.textContent=`التمارين المطلوبة للمريض: ${directExerciseNumbers.join("، ")}`;
-}
 $("exerciseSummary").textContent=searchNumbers?`${list.length} matching exercise${list.length===1?"":"s"} • sorted by number`:`${list.length} exercise${list.length===1?"":"s"} available`;
 if(!list.length){$("exerciseGrid").innerHTML=`<div class="empty">${searchNumbers?"No exercises match those numbers.":"No exercises found for the selected body region."}</div>`;return;}
 $("exerciseGrid").innerHTML=list.map(e=>{
@@ -250,7 +244,11 @@ if(tabId==="adminTab")renderAdmin();
 }
 function getDirectExerciseNumbers(){
 try{
-const raw=new URLSearchParams(window.location.search).get("ex");
+let raw=new URLSearchParams(window.location.search).get("ex");
+if(!raw){
+const hash=window.location.hash.replace(/^#/,"");
+raw=new URLSearchParams(hash).get("ex");
+}
 if(!raw)return null;
 const nums=raw.split(/[,\s]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0);
 return [...new Set(nums)];
@@ -332,18 +330,7 @@ $("adminContent").innerHTML=`<div class="admin-panel">
 <div class="admin-toolbar"><div><strong>Exercise library</strong><div style="color:#667085;font-size:13px">${list.length} Firestore exercises</div></div>
 <div style="display:flex;gap:8px"><button class="btn btn-primary" id="addExerciseBtn">+ Add exercise</button><button class="btn btn-outline" id="logoutBtn">Logout</button></div></div>
 
-<div class="admin-panel" style="margin-top:16px;padding:16px;border:1px solid #e5e7eb;border-radius:14px">
-<strong>Patient link (optional / legacy)</strong>
-<div style="color:#667085;font-size:13px;margin:5px 0 10px">لم يعد هذا الرابط مطلوبًا لإرسال التمارين؛ النظام الآن ينشئ رابطًا مباشرًا تلقائيًا من رابط موقعك الحالي.</div>
-<div class="field">
-<label>Patient media/search link</label>
-<input id="patientMediaLink" type="url" value="${escapeHtml(patientMediaLink)}" placeholder="https://your-site.github.io/Home-ex/">
-</div>
-<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-<button class="btn btn-primary" id="savePatientMediaLinkBtn">Save link</button>
-<span id="settingsNotice"></span>
-</div>
-</div>
+
 
 <div class="admin-list">${list.map(e=>`<div class="admin-row"><div class="meta"><div class="admin-number">#${exerciseNumber(e)}</div><img src="${escapeHtml(imageList(e)[0]||"https://via.placeholder.com/300x200?text=Exercise")}" alt=""><div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(e.region)}</div></div></div><div class="admin-row-actions"><button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button><button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button></div></div>`).join("")||`<div class="empty">No Firestore exercises yet. Add your first one.</div>`}</div></div>`;
 $("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");};
@@ -487,7 +474,8 @@ const linkNumbers=list.map(e=>exerciseNumber(e)).join(",");
 const currentUrl=new URL(window.location.href);
 currentUrl.search="";
 currentUrl.hash="";
-const directLink=`${currentUrl.origin}${currentUrl.pathname}${currentUrl.pathname.endsWith("/")?"":"/"}?ex=${encodeURIComponent(linkNumbers)}`;
+const base=`${currentUrl.origin}${currentUrl.pathname}`.replace(/\/$/,"");
+const directLink=`${base}/#ex=${encodeURIComponent(linkNumbers)}`;
 let text="";
 if(patient)text+=`برنامج التمارين للمريض: ${patient}\n\n`;
 list.forEach(e=>{
@@ -525,9 +513,7 @@ console.warn("Signed-in user is not confirmed as admin:",adminCheckError);
 }
 });
 
-directExerciseNumbers=getDirectExerciseNumbers();
-if(directExerciseNumbers)document.body.classList.add("direct-mode");
-loadSettings().then(()=>loadExercises());
+directExerciseNumbers=getDirectExerciseNumbers();loadSettings().then(()=>loadExercises());
 </script>
 </body>
 </html>
