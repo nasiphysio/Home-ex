@@ -120,7 +120,7 @@ main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display
 <div id="imageInputs"></div>
 <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
 <button type="button" class="btn btn-outline" id="addImageBtn">+ Add another image</button>
-<span style="font-size:12px;color:#667085">Add as many images as you need. Google Drive share links are supported.</span>
+<span style="font-size:12px;color:#667085">Add as many images as you need. Google Drive share links are supported. Make sure the file is shared as “Anyone with the link”.</span>
 </div>
 </div>
 <div class="field full"><label>Video explanation URL</label><input id="fVideo" placeholder="https://youtube.com/..."></div>
@@ -134,7 +134,7 @@ main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,getDoc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,getDoc,setDoc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyDIDA8-KmZ9Pi5JHYjb8E2kgFQNF1_Zy70",
@@ -155,15 +155,27 @@ const fallbackExercises=[
 {number:3,id:"demo3",name:"Cat-Cow",region:"Lower Back",description:"On hands and knees, gently alternate between rounding the spine and extending it. Keep the movement slow and comfortable.",images:["https://images.unsplash.com/photo-1603988363607-e1e4a66962c6?auto=format&fit=crop&w=1200&q=85"],video:"https://www.youtube.com/results?search_query=cat+cow+exercise"}
 ];
 
-let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null,adminCheckError="";
+let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null,adminCheckError="";\nlet patientMediaLink=window.location.href.split("#")[0];
 const galleryIndex=new Map();
 const $=id=>document.getElementById(id);
 
 function driveToImageUrl(url){
 if(!url)return"";
-let m=String(url).match(/\/d\/([a-zA-Z0-9_-]+)/);if(m)return`https://drive.google.com/uc?export=view&id=${m[1]}`;
-m=String(url).match(/[?&]id=([a-zA-Z0-9_-]+)/);if(m)return`https://drive.google.com/uc?export=view&id=${m[1]}`;
-return String(url);
+const raw=String(url).trim();
+
+// Google Drive sharing links -> image thumbnail.
+// This works better than /uc?export=view for browser <img> elements.
+let m=raw.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+if(m)return`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1600`;
+
+m=raw.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+if(m && /drive\.google\.com/i.test(raw))
+  return`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1600`;
+
+m=raw.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+if(m)return`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1600`;
+
+return raw;
 }
 function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function exerciseNumber(e){return Number(e.number)||999999;}
@@ -188,7 +200,7 @@ const imgs=imageList(e),idx=Math.min(galleryIndex.get(e.id)||0,Math.max(imgs.len
 const selected=selectedIds.has(e.id),src=imgs[idx]||"https://via.placeholder.com/1200x800?text=Exercise",count=imgs.length;
 return `<article class="exercise-card ${selected?"selected":""}">
 <div class="gallery">
-<img class="exercise-image" src="${escapeHtml(src)}" alt="${escapeHtml(e.name)}" onerror="this.src='https://via.placeholder.com/1200x800?text=Exercise'">
+<img class="exercise-image" src="${escapeHtml(src)}" alt="${escapeHtml(e.name)}" onerror="this.onerror=null;this.src='https://via.placeholder.com/1200x800?text=Image+not+available'">
 ${count>1?`<button class="gallery-arrow left" data-prev="${escapeHtml(e.id)}" aria-label="Previous image">‹</button><button class="gallery-arrow right" data-next="${escapeHtml(e.id)}" aria-label="Next image">›</button>`:""}
 ${count?`<div class="image-counter">${idx+1} / ${count}</div>`:""}
 </div>
@@ -261,14 +273,52 @@ $("loginNotice").innerHTML="";
 $("loginModal").classList.remove("hidden");
 setTimeout(()=>$("loginEmail").focus(),50);
 }
+async function loadSettings(){
+try{
+const snap=await getDoc(doc(db,"settings","main"));
+if(snap.exists() && snap.data().patientMediaLink){
+patientMediaLink=String(snap.data().patientMediaLink).trim()||window.location.href.split("#")[0];
+}
+}catch(e){
+console.warn("Settings load failed:",e);
+}
+}
+async function savePatientMediaLink(){
+if(!isAdmin)return;
+const value=$("patientMediaLink").value.trim();
+if(!value){alert("Please enter the patient media/search link.");return;}
+try{
+await setDoc(doc(db,"settings","main"),{patientMediaLink:value,updatedAt:serverTimestamp()},{merge:true});
+patientMediaLink=value;
+$("settingsNotice").innerHTML=`<div class="notice success">Link saved successfully.</div>`;
+}catch(e){
+console.error(e);
+$("settingsNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;
+}
+}
 function renderAdmin(){
 if(!isAdmin){$("adminContent").innerHTML=`<div class="empty">Admin access required. Please log in from the Admin button.</div>`;return;}
 const list=sortedExercises(exercises.filter(e=>!String(e.id).startsWith("demo")));
 $("adminContent").innerHTML=`<div class="admin-panel">
 <div class="admin-toolbar"><div><strong>Exercise library</strong><div style="color:#667085;font-size:13px">${list.length} Firestore exercises</div></div>
 <div style="display:flex;gap:8px"><button class="btn btn-primary" id="addExerciseBtn">+ Add exercise</button><button class="btn btn-outline" id="logoutBtn">Logout</button></div></div>
+
+<div class="admin-panel" style="margin-top:16px;padding:16px;border:1px solid #e5e7eb;border-radius:14px">
+<strong>Patient link used in WhatsApp</strong>
+<div style="color:#667085;font-size:13px;margin:5px 0 10px">This is the link the patient will open to search for the exercise numbers and view their images/videos. You can change it anytime.</div>
+<div class="field">
+<label>Patient media/search link</label>
+<input id="patientMediaLink" type="url" value="${escapeHtml(patientMediaLink)}" placeholder="https://your-site.github.io/Home-ex/">
+</div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<button class="btn btn-primary" id="savePatientMediaLinkBtn">Save link</button>
+<span id="settingsNotice"></span>
+</div>
+</div>
+
 <div class="admin-list">${list.map(e=>`<div class="admin-row"><div class="meta"><div class="admin-number">#${exerciseNumber(e)}</div><img src="${escapeHtml(imageList(e)[0]||"https://via.placeholder.com/300x200?text=Exercise")}" alt=""><div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(e.region)}</div></div></div><div class="admin-row-actions"><button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button><button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button></div></div>`).join("")||`<div class="empty">No Firestore exercises yet. Add your first one.</div>`}</div></div>`;
 $("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");};
+$("savePatientMediaLinkBtn").onclick=savePatientMediaLink;
 document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openExerciseModal(b.dataset.edit));document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteExercise(b.dataset.delete));
 }
 async function nextExerciseNumber(){
@@ -400,9 +450,20 @@ const raw=$("exerciseSearch").value.trim();if(!raw){searchNumbers=null;renderExe
 const nums=raw.split(/[\s,;]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0);searchNumbers=nums.length?new Set(nums):new Set([-1]);renderExercises();
 }
 function whatsapp(){
-const patient=$("patientName").value.trim(),list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));if(!list.length){alert("Select at least one exercise.");return;}
-let text=`Home Exercise Program${patient?` for ${patient}`:""}\n\n`;
-list.forEach(e=>{text+=`#${exerciseNumber(e)} — ${e.name}\n${e.description}\n`;if(e.video)text+=`Video: ${e.video}\n`;text+="\n";});
+const patient=$("patientName").value.trim(),list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));
+if(!list.length){alert("Select at least one exercise.");return;}
+
+const numbers=list.map(e=>exerciseNumber(e)).join(" ");
+let text=`ابحث بالارقام الاتية:\n${numbers}\n\n`;
+if(patient)text+=`برنامج التمارين للمريض: ${patient}\n\n`;
+
+list.forEach(e=>{
+text+=`${exerciseNumber(e)} - ${e.name}\n`;
+text+=`${e.description}\n\n`;
+});
+
+text+=`لمشاهدة الصور او الفيديوهات، افتح اللينك ده:\n${patientMediaLink}`;
+
 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
 }
 async function makePdf(){
@@ -434,7 +495,7 @@ console.warn("Signed-in user is not confirmed as admin:",adminCheckError);
 }
 });
 
-loadExercises();
+loadSettings().then(()=>loadExercises());
 </script>
 </body>
 </html>
