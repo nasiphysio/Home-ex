@@ -95,18 +95,18 @@ nav a, nav button,
 <div class="header-inner">
 <div class="brand">
 <div><h1>Home Exercise Prescription</h1><p>Choose exercises, then send the prescription to your patient.</p></div>
-<button class="admin-btn" id="adminOpenBtn">
-<div id="hxTimingSettings" style="margin-top:12px;padding:12px;border:1px solid #e5e7eb;border-radius:12px">
-  <div style="font-weight:800;margin-bottom:8px">Display Timing</div>
-  <label style="display:block;margin:7px 0">Top images (seconds)
-    <input id="hxTopInterval" type="number" min="1" max="3600" step="1" value="4" style="width:90px;margin-left:8px;padding:6px;border-radius:8px;border:1px solid #d1d5db">
+<button class="admin-btn" id="adminOpenBtn">Admin<div id="hxDisplaySettings" style="margin:12px 0;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
+  <div style="font-weight:800;margin-bottom:10px">Display Settings</div>
+  <label style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0">
+    <span>Top images (seconds)</span>
+    <input id="hxTopSeconds" type="number" min="1" max="3600" step="1" value="4" style="width:85px;padding:7px;border:1px solid #d1d5db;border-radius:8px">
   </label>
-  <label style="display:block;margin:7px 0">Advertisement (seconds)
-    <input id="hxAdInterval" type="number" min="1" max="3600" step="1" value="8" style="width:90px;margin-left:8px;padding:6px;border-radius:8px;border:1px solid #d1d5db">
+  <label style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0">
+    <span>Advertisements (seconds)</span>
+    <input id="hxAdSeconds" type="number" min="1" max="3600" step="1" value="6" style="width:85px;padding:7px;border:1px solid #d1d5db;border-radius:8px">
   </label>
-  <button id="hxSaveTiming" type="button" style="margin-top:6px;padding:8px 12px;border:0;border-radius:9px;cursor:pointer">Save timing</button>
-</div>
-Admin</button>
+  <button id="hxSaveDisplaySettings" type="button" style="padding:8px 12px;border:0;border-radius:9px;cursor:pointer">Save</button>
+</div></button>
 </div>
 </div>
 </header>
@@ -155,7 +155,7 @@ Admin</button>
 <div id="adminContent"></div>
 </section>
 </main>
-<div class="footer">Firebase Firestore • GitHub Pages compatible • <a href="mailto:ahmed4nassef@gmail.com">Contact Us</a></div>
+<div class="footer"> • <a href="mailto:ahmed4nassef@gmail.com">Contact Us</a></div>
 </div>
 
 <div class="modal hidden" id="loginModal">
@@ -706,24 +706,47 @@ window.addEventListener("load",hxUpdateBar);
   else hxMoveAdminToFooter();
 })();
 
+async function hxRecordVisitSafely(){
+  try{
+    if(typeof db==="undefined" || typeof doc==="undefined" || typeof runTransaction==="undefined") return;
+    const ref=doc(db,"stats","usage");
+    const next=await runTransaction(db,async tx=>{
+      const snap=await tx.get(ref);
+      const current=snap.exists()?Number(snap.data().visits||0):0;
+      const value=current+1;
+      tx.set(ref,{visits:value},{merge:true});
+      return value;
+    });
+    const el=document.getElementById("visitCount");
+    if(el) el.textContent=Number(next).toLocaleString("en-US");
+  }catch(e){ console.warn("Visit counter unavailable:",e); }
+}
+
 (function(){
-  const TOP_KEY="homeex_top_interval_sec";
-  const AD_KEY="homeex_ad_interval_sec";
-  function loadTiming(){
-    const a=document.getElementById("hxTopInterval"),b=document.getElementById("hxAdInterval");
-    if(a)a.value=localStorage.getItem(TOP_KEY)||"4";
-    if(b)b.value=localStorage.getItem(AD_KEY)||"8";
+  async function hxLoadDisplaySettings(){
+    try{
+      if(typeof db==="undefined" || typeof doc==="undefined" || typeof getDoc==="undefined") return;
+      const snap=await getDoc(doc(db,"settings","display"));
+      if(!snap.exists()) return;
+      const d=snap.data()||{};
+      const top=document.getElementById("hxTopSeconds"), ad=document.getElementById("hxAdSeconds");
+      if(top && Number(d.topSeconds)>0) top.value=Number(d.topSeconds);
+      if(ad && Number(d.adSeconds)>0) ad.value=Number(d.adSeconds);
+    }catch(e){console.warn("Display settings unavailable:",e)}
   }
-  function saveTiming(){
-    const a=document.getElementById("hxTopInterval"),b=document.getElementById("hxAdInterval");
-    if(a)localStorage.setItem(TOP_KEY,String(Math.max(1,Number(a.value)||4)));
-    if(b)localStorage.setItem(AD_KEY,String(Math.max(1,Number(b.value)||8)));
-    alert("Timing saved.");
+  async function hxSaveDisplaySettings(){
+    try{
+      if(typeof db==="undefined" || typeof doc==="undefined" || typeof setDoc==="undefined") return;
+      const top=Math.max(1,Number(document.getElementById("hxTopSeconds")?.value)||4);
+      const ad=Math.max(1,Number(document.getElementById("hxAdSeconds")?.value)||6);
+      await setDoc(doc(db,"settings","display"),{topSeconds:top,adSeconds:ad},{merge:true});
+      alert("Display timing saved.");
+    }catch(e){alert("Could not save display timing.");console.error(e)}
   }
   document.addEventListener("DOMContentLoaded",function(){
-    loadTiming();
-    const s=document.getElementById("hxSaveTiming");
-    if(s)s.addEventListener("click",saveTiming);
+    hxLoadDisplaySettings();
+    const b=document.getElementById("hxSaveDisplaySettings");
+    if(b)b.addEventListener("click",hxSaveDisplaySettings);
   });
 })();
 </script>
@@ -740,5 +763,5 @@ window.addEventListener("load",hxUpdateBar);
     <div id="hxSelectedCount">0 Exercises Selected</div>
     <button id="hxSendBtn" type="button">Send to Patient (0)</button>
   </div>
-</div><div id="hxSelectedBar" aria-live="polite"><div class="hx-inner"><div id="hxSelectedCount">0 Exercises Selected</div><button id="hxSendBtn" type="button">Send to Patient (0)</button></div></div></body>
+</div></body>
 </html>
