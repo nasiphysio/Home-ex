@@ -1,534 +1,319 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Home Exercise Prescription</title>
-  <meta name="description" content="Home exercise prescription tool for clinicians." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-  <style>
-    :root{
-      --bg:#f6f8fb; --card:#fff; --text:#172033; --muted:#667085;
-      --primary:#2563eb; --primary-dark:#1d4ed8; --border:#e5e7eb;
-      --danger:#dc2626; --success:#059669; --shadow:0 10px 30px rgba(16,24,40,.07);
-      --radius:18px;
-    }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
-    button,input,textarea,select{font:inherit}
-    button{cursor:pointer}
-    .app{min-height:100vh}
-    header{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:white;padding:28px 20px 90px}
-    .header-inner{max-width:1180px;margin:auto}
-    .brand{display:flex;align-items:center;justify-content:space-between;gap:20px}
-    .brand h1{font-size:26px;margin:0 0 7px}
-    .brand p{margin:0;color:#cbd5e1}
-    .admin-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:white;padding:10px 15px;border-radius:12px}
-    .tabs-wrap{position:sticky;top:0;z-index:50;margin:-55px auto 0;max-width:1180px;padding:0 20px}
-    .tabs{display:flex;gap:8px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);padding:8px;border:1px solid var(--border);box-shadow:var(--shadow);border-radius:16px}
-    .tab{flex:1;border:0;background:transparent;padding:13px 16px;border-radius:11px;font-weight:700;color:var(--muted)}
-    .tab.active{background:#eff6ff;color:var(--primary)}
-    main{max-width:1180px;margin:25px auto;padding:0 20px 70px}
-    .section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:25px 0 15px}
-    .section-head h2{margin:0;font-size:22px}
-    .section-head p{margin:6px 0 0;color:var(--muted)}
-    .regions{display:flex;flex-wrap:wrap;gap:10px}
-    .region{border:1px solid var(--border);background:white;padding:10px 14px;border-radius:999px;color:#344054;font-weight:600}
-    .region.active{background:#2563eb;color:white;border-color:#2563eb}
-    .exercise-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
-    .exercise-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 5px 18px rgba(16,24,40,.04);position:relative}
-    .exercise-card.selected{outline:3px solid #bfdbfe}
-    .exercise-image{width:100%;height:205px;object-fit:cover;background:#eef2f7}
-    .card-body{padding:17px}
-    .card-top{display:flex;align-items:start;justify-content:space-between;gap:10px}
-    .card-title{font-size:19px;font-weight:800;margin:0 0 8px}
-    .badge{font-size:11px;background:#eef2ff;color:#3730a3;padding:5px 8px;border-radius:999px;white-space:nowrap}
-    .description{color:#667085;line-height:1.55;font-size:14px;margin:0 0 13px}
-    .card-actions{display:flex;gap:8px;align-items:center}
-    .check{display:flex;align-items:center;gap:9px;font-weight:700;flex:1}
-    .check input{width:20px;height:20px;accent-color:var(--primary)}
-    .video-btn,.text-btn{border:1px solid var(--border);background:white;color:#344054;padding:8px 10px;border-radius:10px;text-decoration:none;font-size:13px}
-    .empty{background:white;border:1px dashed #cbd5e1;border-radius:16px;padding:35px;text-align:center;color:var(--muted)}
-    .send-panel,.admin-panel,.modal-card{background:white;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
-    .send-panel{padding:22px}
-    .selected-list{display:grid;gap:12px;margin:18px 0}
-    .selected-item{display:flex;gap:12px;padding:12px;border:1px solid var(--border);border-radius:13px;align-items:center}
-    .selected-item img{width:70px;height:55px;border-radius:9px;object-fit:cover;background:#eef2f7}
-    .selected-item strong{display:block}
-    .selected-item small{color:var(--muted)}
-    .send-actions{display:flex;flex-wrap:wrap;gap:10px}
-    .btn{border:0;border-radius:11px;padding:11px 15px;font-weight:700}
-    .btn-primary{background:var(--primary);color:white}
-    .btn-primary:hover{background:var(--primary-dark)}
-    .btn-green{background:#059669;color:white}
-    .btn-dark{background:#111827;color:white}
-    .btn-outline{background:white;color:#344054;border:1px solid var(--border)}
-    .btn-danger{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
-    .hidden{display:none!important}
-    .admin-panel{padding:22px}
-    .admin-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-    .admin-list{display:grid;gap:10px}
-    .admin-row{display:flex;align-items:center;justify-content:space-between;gap:15px;border:1px solid var(--border);border-radius:14px;padding:12px}
-    .admin-row .meta{display:flex;gap:12px;align-items:center}
-    .admin-row img{width:65px;height:50px;object-fit:cover;border-radius:8px}
-    .admin-row-actions{display:flex;gap:7px}
-    .modal{position:fixed;inset:0;background:rgba(15,23,42,.62);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100}
-    .modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;padding:22px}
-    .modal-head{display:flex;justify-content:space-between;align-items:center}
-    .modal-head h3{margin:0}
-    .close{border:0;background:#f2f4f7;border-radius:10px;width:36px;height:36px}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
-    .field{display:flex;flex-direction:column;gap:7px}
-    .field.full{grid-column:1/-1}
-    .field label{font-size:13px;font-weight:700;color:#344054}
-    .field input,.field textarea,.field select{border:1px solid #d0d5dd;border-radius:10px;padding:11px;background:white}
-    .field textarea{min-height:105px;resize:vertical}
-    .form-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
-    .login-box{max-width:420px;margin:20px auto}
-    .login-box .field{margin-bottom:13px}
-    .notice{padding:11px 13px;border-radius:10px;font-size:13px;margin-top:10px}
-    .notice.error{background:#fef2f2;color:#b91c1c}
-    .notice.ok{background:#ecfdf3;color:#047857}
-    .footer{text-align:center;color:#98a2b3;font-size:12px;padding:25px}
-    @media(max-width:700px){
-      .brand{align-items:flex-start}.brand h1{font-size:21px}.admin-btn{font-size:12px}
-      .form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}
-      .tabs-wrap{padding:0 10px}.tabs{border-radius:13px}
-      main{padding:0 12px 50px}.exercise-grid{grid-template-columns:1fr}
-      .admin-row{align-items:flex-start;flex-direction:column}.admin-row-actions{width:100%}.admin-row-actions .btn{flex:1}
-    }
-    @media print{
-      body{background:white}.no-print{display:none!important}
-      #pdfArea{display:block!important}.send-panel{box-shadow:none;border:0}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Exercise Prescription</title>
+<meta name="description" content="Home exercise prescription tool for clinicians.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--text:#172033;--muted:#667085;--primary:#2563eb;--primary-dark:#1d4ed8;--border:#e5e7eb;--danger:#dc2626;--success:#059669;--shadow:0 10px 30px rgba(16,24,40,.07);--radius:18px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}.app{min-height:100vh}
+header{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;padding:28px 20px 92px}.header-inner{max-width:1180px;margin:auto}
+.brand{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.brand h1{font-size:28px;margin:0 0 7px}.brand p{margin:0;color:#cbd5e1}
+.admin-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:11px 17px;border-radius:12px}
+.tabs-wrap{position:sticky;top:0;z-index:50;margin:-58px auto 0;max-width:1180px;padding:0 20px}.tabs{display:flex;gap:8px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);padding:8px;border:1px solid var(--border);box-shadow:var(--shadow);border-radius:16px}
+.tab{flex:1;border:0;background:transparent;padding:13px 16px;border-radius:11px;font-weight:800;color:var(--muted)}.tab.active{background:#eff6ff;color:var(--primary)}
+main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:25px 0 15px}.section-head h2{margin:0;font-size:23px}.section-head p{margin:6px 0 0;color:var(--muted)}
+.regions{display:flex;flex-wrap:wrap;gap:10px}.region{border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:999px;color:#344054;font-weight:600}.region.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.search-panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:16px;margin:22px 0 10px;box-shadow:var(--shadow)}.search-row{display:flex;gap:10px;align-items:end}.search-field{flex:1}.search-field label{display:block;font-size:13px;font-weight:800;color:#344054;margin-bottom:7px}.search-field input{width:100%;border:1px solid #d0d5dd;border-radius:11px;padding:12px 13px}.search-field input::placeholder{color:#98a2b3}.search-help{font-size:12px;color:var(--muted);margin-top:7px}
+.exercise-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px}.exercise-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 5px 18px rgba(16,24,40,.04);position:relative}.exercise-card.selected{outline:3px solid #bfdbfe}
+.gallery{position:relative;background:#eef2f7}.exercise-image{display:block;width:100%;height:300px;object-fit:cover;background:#eef2f7}.gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(17,24,39,.68);color:#fff;font-size:25px;line-height:1}.gallery-arrow.left{left:12px}.gallery-arrow.right{right:12px}.image-counter{position:absolute;right:12px;bottom:12px;background:rgba(17,24,39,.78);color:#fff;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}
+.card-body{padding:17px}.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.number-badge{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:34px;padding:0 10px;background:#111827;color:#fff;border-radius:10px;font-weight:800;font-size:14px}.card-title{font-size:21px;font-weight:800;margin:0 0 7px}.badge{display:inline-block;font-size:11px;background:#eef2ff;color:#3730a3;padding:5px 8px;border-radius:999px}.description{color:#667085;line-height:1.65;font-size:14px;margin:13px 0}.card-actions{display:flex;gap:8px;align-items:center}.check{display:flex;align-items:center;gap:9px;font-weight:700;flex:1}.check input{width:20px;height:20px;accent-color:var(--primary)}.video-btn,.text-btn{border:1px solid var(--border);background:#fff;color:#344054;padding:9px 11px;border-radius:10px;text-decoration:none;font-size:13px}
+.empty{background:#fff;border:1px dashed #cbd5e1;border-radius:16px;padding:35px;text-align:center;color:var(--muted);grid-column:1/-1}
+.send-panel,.admin-panel,.modal-card{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}.send-panel{padding:22px}.selected-list{display:grid;gap:12px;margin:18px 0}.selected-item{display:flex;gap:12px;padding:12px;border:1px solid var(--border);border-radius:13px;align-items:center}.selected-item img{width:78px;height:60px;border-radius:9px;object-fit:cover;background:#eef2f7}.selected-item strong{display:block}.selected-item small{color:var(--muted)}.send-actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn{border:0;border-radius:11px;padding:11px 15px;font-weight:700}.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}.btn-green{background:#059669;color:#fff}.btn-dark{background:#111827;color:#fff}.btn-outline{background:#fff;color:#344054;border:1px solid var(--border)}.btn-danger{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+.admin-panel{padding:22px}.admin-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}.admin-list{display:grid;gap:10px}.admin-row{display:flex;align-items:center;justify-content:space-between;gap:15px;border:1px solid var(--border);border-radius:14px;padding:12px}.admin-row .meta{display:flex;gap:12px;align-items:center}.admin-row img{width:75px;height:58px;object-fit:cover;border-radius:8px}.admin-row-actions{display:flex;gap:7px}.admin-number{background:#111827;color:#fff;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:800;margin-right:7px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.62);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100}.modal-card{width:min(760px,100%);max-height:90vh;overflow:auto;padding:22px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0}.close{border:0;background:#f2f4f7;border-radius:10px;width:36px;height:36px;font-size:22px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:13px;font-weight:700;color:#344054}.field input,.field textarea,.field select{border:1px solid #d0d5dd;border-radius:10px;padding:11px;background:#fff}.field textarea{min-height:105px;resize:vertical}.form-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}.login-box{max-width:420px;margin:20px auto}.login-box .field{margin-bottom:13px}.notice{padding:11px 13px;border-radius:10px;font-size:13px;margin-top:10px}.notice.error{background:#fef2f2;color:#b91c1c}.notice.ok{background:#ecfdf3;color:#047857}.footer{text-align:center;color:#98a2b3;font-size:12px;padding:25px}
+@media(max-width:700px){.brand{align-items:flex-start}.brand h1{font-size:21px}.admin-btn{font-size:12px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.tabs-wrap{padding:0 10px}.tabs{border-radius:13px}main{padding:0 12px 50px}.exercise-grid{grid-template-columns:1fr}.exercise-image{height:270px}.search-row{flex-direction:column;align-items:stretch}.search-row .btn{width:100%}.admin-row{align-items:flex-start;flex-direction:column}.admin-row-actions{width:100%}.admin-row-actions .btn{flex:1}}
+@media print{body{background:#fff}.no-print{display:none!important}#pdfArea{display:block!important}.send-panel{box-shadow:none;border:0}}
+</style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <div class="header-inner">
-      <div class="brand">
-        <div>
-          <h1>Home Exercise Prescription</h1>
-          <p>Choose exercises, then send the prescription to your patient.</p>
-        </div>
-        <button class="admin-btn" id="adminOpenBtn">Admin</button>
-      </div>
-    </div>
-  </header>
+<header>
+<div class="header-inner">
+<div class="brand">
+<div><h1>Home Exercise Prescription</h1><p>Choose exercises, then send the prescription to your patient.</p></div>
+<button class="admin-btn" id="adminOpenBtn">Admin</button>
+</div>
+</div>
+</header>
 
-  <div class="tabs-wrap no-print">
-    <div class="tabs">
-      <button class="tab active" data-tab="exerciseTab">Exercise</button>
-      <button class="tab" data-tab="sendTab">Send <span id="selectedCount">(0)</span></button>
-    </div>
-  </div>
+<div class="tabs-wrap no-print"><div class="tabs">
+<button class="tab active" data-tab="exerciseTab">Exercise</button>
+<button class="tab" data-tab="sendTab">Send <span id="selectedCount">(0)</span></button>
+</div></div>
 
-  <main>
-    <section id="exerciseTab">
-      <div class="section-head">
-        <div>
-          <h2>Body regions</h2>
-          <p>Select one or more areas to see suitable home exercises.</p>
-        </div>
-        <button class="btn btn-outline no-print" id="clearFilters">Clear</button>
-      </div>
-      <div class="regions" id="regions"></div>
+<main>
+<section id="exerciseTab">
+<div class="search-panel no-print">
+<div class="search-row">
+<div class="search-field"><label for="exerciseSearch">Patient</label><input id="exerciseSearch" placeholder="Exercises number (e.g. 1, 4, 7)" inputmode="numeric"></div>
+<button class="btn btn-primary" id="searchBtn">Search</button>
+<button class="btn btn-outline" id="clearSearchBtn">Clear</button>
+</div>
+<div class="search-help">Write exercise numbers separated by commas or spaces. The results will appear in number order.</div>
+</div>
 
-      <div class="section-head">
-        <div>
-          <h2>Exercises</h2>
-          <p id="exerciseSummary">Loading...</p>
-        </div>
-      </div>
-      <div class="exercise-grid" id="exerciseGrid"></div>
-    </section>
+<div class="section-head"><div><h2>Body regions</h2><p>Select one or more areas to see suitable home exercises.</p></div><button class="btn btn-outline no-print" id="clearFilters">Clear</button></div>
+<div class="regions" id="regions"></div>
 
-    <section id="sendTab" class="hidden">
-      <div class="section-head">
-        <div>
-          <h2>Send prescription</h2>
-          <p>Only the exercises you checked will be included.</p>
-        </div>
-      </div>
-      <div class="send-panel" id="pdfArea">
-        <div class="no-print">
-          <div class="field">
-            <label for="patientName">Patient name (optional)</label>
-            <input id="patientName" placeholder="e.g. Ahmed Mohamed">
-          </div>
-        </div>
-        <div id="selectedList" class="selected-list"></div>
-        <div class="send-actions no-print">
-          <button class="btn btn-green" id="whatsappBtn">Send on WhatsApp</button>
-          <button class="btn btn-dark" id="pdfBtn">Download PDF</button>
-          <button class="btn btn-outline" id="backBtn">Back to exercises</button>
-        </div>
-      </div>
-    </section>
+<div class="section-head"><div><h2>Exercises</h2><p id="exerciseSummary">Loading...</p></div></div>
+<div class="exercise-grid" id="exerciseGrid"></div>
+</section>
 
-    <section id="adminTab" class="hidden">
-      <div class="section-head">
-        <div>
-          <h2>Admin</h2>
-          <p>Add, edit, or delete exercises.</p>
-        </div>
-      </div>
-      <div id="adminContent"></div>
-    </section>
-  </main>
-  <div class="footer">Firebase Firestore • Static GitHub Pages compatible</div>
+<section id="sendTab" class="hidden">
+<div class="section-head"><div><h2>Send prescription</h2><p>The WhatsApp message will contain exercise numbers, names and descriptions.</p></div></div>
+<div class="send-panel" id="pdfArea">
+<div class="no-print">
+<div class="field"><label for="patientName">Patient name (optional)</label><input id="patientName" placeholder="e.g. Ahmed Mohamed"></div>
+</div>
+<div id="selectedList" class="selected-list"></div>
+<div class="send-actions no-print">
+<button class="btn btn-green" id="whatsappBtn">Send on WhatsApp</button>
+<button class="btn btn-dark" id="pdfBtn">Download PDF</button>
+<button class="btn btn-outline" id="backBtn">Back to exercises</button>
+</div>
+</div>
+</section>
+
+<section id="adminTab" class="hidden">
+<div class="section-head"><div><h2>Admin</h2><p>Add, edit, or delete exercises.</p></div></div>
+<div id="adminContent"></div>
+</section>
+</main>
+<div class="footer">Firebase Firestore • GitHub Pages compatible</div>
 </div>
 
 <div class="modal hidden" id="loginModal">
-  <div class="modal-card">
-    <div class="modal-head"><h3>Admin login</h3><button class="close" data-close="loginModal">×</button></div>
-    <div class="login-box">
-      <div class="field"><label>Email</label><input id="loginEmail" type="email" placeholder="admin@example.com"></div>
-      <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••"></div>
-      <button class="btn btn-primary" id="loginBtn">Login</button>
-      <div id="loginNotice"></div>
-    </div>
-  </div>
+<div class="modal-card">
+<div class="modal-head"><h3>Admin login</h3><button class="close" data-close="loginModal">×</button></div>
+<div class="login-box">
+<div class="field"><label>Email</label><input id="loginEmail" type="email" placeholder="admin@example.com" autocomplete="username"></div>
+<div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+<button class="btn btn-primary" id="loginBtn">Login</button>
+<div id="loginNotice"></div>
+</div>
+</div>
 </div>
 
 <div class="modal hidden" id="exerciseModal">
-  <div class="modal-card">
-    <div class="modal-head"><h3 id="exerciseModalTitle">Add exercise</h3><button class="close" data-close="exerciseModal">×</button></div>
-    <form id="exerciseForm">
-      <input id="exerciseId" type="hidden">
-      <div class="form-grid">
-        <div class="field"><label>Exercise name</label><input id="fName" required></div>
-        <div class="field"><label>Body region</label>
-          <select id="fRegion" required>
-            <option>Shoulder</option><option>Elbow</option><option>Wrist / Hand</option>
-            <option>Neck</option><option>Upper Back</option><option>Lower Back</option>
-            <option>Hip</option><option>Knee</option><option>Ankle / Foot</option>
-            <option>Core</option><option>Whole Body</option>
-          </select>
-        </div>
-        <div class="field full"><label>Short description / instructions</label><textarea id="fDescription" required></textarea></div>
-        <div class="field full"><label>Image URLs (one per line — Google Drive share links are supported)</label><textarea id="fImages" placeholder="https://drive.google.com/file/d/FILE_ID/view"></textarea></div>
-        <div class="field full"><label>Video explanation URL</label><input id="fVideo" placeholder="https://youtube.com/..."></div>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn btn-outline" data-close="exerciseModal">Cancel</button>
-        <button class="btn btn-primary" type="submit">Save exercise</button>
-      </div>
-      <div id="formNotice"></div>
-    </form>
-  </div>
+<div class="modal-card">
+<div class="modal-head"><h3 id="exerciseModalTitle">Add exercise</h3><button class="close" data-close="exerciseModal">×</button></div>
+<form id="exerciseForm">
+<input id="exerciseId" type="hidden">
+<div class="form-grid">
+<div class="field"><label>Exercise number</label><input id="fNumber" type="number" min="1" readonly></div>
+<div class="field"><label>Exercise name</label><input id="fName" required></div>
+<div class="field"><label>Body region</label><select id="fRegion" required>
+<option>Shoulder</option><option>Elbow</option><option>Wrist / Hand</option><option>Neck</option><option>Upper Back</option><option>Lower Back</option><option>Hip</option><option>Knee</option><option>Ankle / Foot</option><option>Core</option><option>Whole Body</option>
+</select></div>
+<div class="field full"><label>Short description / instructions</label><textarea id="fDescription" required></textarea></div>
+<div class="field full"><label>Image URLs — one per line</label><textarea id="fImages" placeholder="Google Drive share links are supported. Put one image link on each line."></textarea></div>
+<div class="field full"><label>Video explanation URL</label><input id="fVideo" placeholder="https://youtube.com/..."></div>
+</div>
+<div class="form-actions"><button type="button" class="btn btn-outline" data-close="exerciseModal">Cancel</button><button class="btn btn-primary" type="submit">Save exercise</button></div>
+<div id="formNotice"></div>
+</form>
+</div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,getDoc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-  // ============================================================
-  // 1) PASTE YOUR FIREBASE CONFIG HERE
-  // Firebase Console -> Project settings -> Your apps -> Web app
-  // ============================================================
-  const firebaseConfig = {
-    apiKey: "AIzaSyDIDA8-KmZ9Pi5JHYjb8E2kgFQNF1_Zy70",
-    authDomain: "homeex-b938a.firebaseapp.com",
-    databaseURL: "https://homeex-b938a-default-rtdb.firebaseio.com",
-    projectId: "homeex-b938a",
-    storageBucket: "homeex-b938a.firebasestorage.app",
-    messagingSenderId: "1045594278633",
-    appId: "1:1045594278633:web:032994a69f62e5206dfe78",
-    measurementId: "G-ZK5ZWBTNH7"
-  };
+const firebaseConfig={
+apiKey:"AIzaSyDIDA8-KmZ9Pi5JHYjb8E2kgFQNF1_Zy70",
+authDomain:"homeex-b938a.firebaseapp.com",
+databaseURL:"https://homeex-b938a-default-rtdb.firebaseio.com",
+projectId:"homeex-b938a",
+storageBucket:"homeex-b938a.firebasestorage.app",
+messagingSenderId:"1045594278633",
+appId:"1:1045594278633:web:032994a69f62e5206dfe78",
+measurementId:"G-ZK5ZWBTNH7"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const REGIONS=["Shoulder","Elbow","Wrist / Hand","Neck","Upper Back","Lower Back","Hip","Knee","Ankle / Foot","Core","Whole Body"];
+const fallbackExercises=[
+{number:1,id:"demo1",name:"Wall Shoulder Flexion",region:"Shoulder",description:"Stand facing a wall and slide your hands upward as far as comfortable. Move slowly and stay within a pain-free or tolerable range.",images:["https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d8?auto=format&fit=crop&w=1200&q=85"],video:"https://www.youtube.com/results?search_query=wall+shoulder+flexion"},
+{number:2,id:"demo2",name:"Sit-to-Stand",region:"Knee",description:"Sit on a stable chair, lean slightly forward, stand up under control, then slowly sit back down. Keep the knees tracking over the feet.",images:["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=85"],video:"https://www.youtube.com/results?search_query=sit+to+stand+exercise"},
+{number:3,id:"demo3",name:"Cat-Cow",region:"Lower Back",description:"On hands and knees, gently alternate between rounding the spine and extending it. Keep the movement slow and comfortable.",images:["https://images.unsplash.com/photo-1603988363607-e1e4a66962c6?auto=format&fit=crop&w=1200&q=85"],video:"https://www.youtube.com/results?search_query=cat+cow+exercise"}
+];
 
-  const REGIONS = [
-    "Shoulder","Elbow","Wrist / Hand","Neck","Upper Back",
-    "Lower Back","Hip","Knee","Ankle / Foot","Core","Whole Body"
-  ];
+let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null;
+const galleryIndex=new Map();
+const $=id=>document.getElementById(id);
 
-  const fallbackExercises = [
-    {id:"demo1",name:"Wall Shoulder Flexion",region:"Shoulder",description:"Stand facing a wall and slide your hands upward as far as comfortable. Move slowly and stay within a pain-free or tolerable range.",images:["https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d?auto=format&fit=crop&w=900&q=80"],video:"https://www.youtube.com/results?search_query=wall+shoulder+flexion"},
-    {id:"demo2",name:"Sit-to-Stand",region:"Knee",description:"Sit on a stable chair, lean slightly forward, stand up under control, then slowly sit back down. Keep the knees tracking over the feet.",images:["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=900&q=80"],video:"https://www.youtube.com/results?search_query=sit+to+stand+exercise"},
-    {id:"demo3",name:"Cat-Cow",region:"Lower Back",description:"On hands and knees, gently alternate between rounding the spine and extending it. Keep the movement slow and comfortable.",images:["https://images.unsplash.com/photo-1603988363607-e1e4a66962c6?auto=format&fit=crop&w=900&q=80"],video:"https://www.youtube.com/results?search_query=cat+cow+exercise"}
-  ];
+function driveToImageUrl(url){
+if(!url)return"";
+let m=String(url).match(/\/d\/([a-zA-Z0-9_-]+)/);if(m)return`https://drive.google.com/uc?export=view&id=${m[1]}`;
+m=String(url).match(/[?&]id=([a-zA-Z0-9_-]+)/);if(m)return`https://drive.google.com/uc?export=view&id=${m[1]}`;
+return String(url);
+}
+function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function exerciseNumber(e){return Number(e.number)||999999;}
+function sortedExercises(list){return [...list].sort((a,b)=>exerciseNumber(a)-exerciseNumber(b));}
+function imageList(e){return(e.images||[]).map(driveToImageUrl).filter(Boolean);}
+function filteredExercises(){
+let list=exercises;
+if(searchNumbers&&searchNumbers.size)list=list.filter(e=>searchNumbers.has(exerciseNumber(e)));
+if(activeRegions.size)list=list.filter(e=>activeRegions.has(e.region));
+return sortedExercises(list);
+}
+function renderRegions(){
+$("regions").innerHTML=REGIONS.map(r=>`<button class="region ${activeRegions.has(r)?"active":""}" data-region="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join("");
+document.querySelectorAll(".region").forEach(btn=>btn.onclick=()=>{let r=btn.dataset.region;activeRegions.has(r)?activeRegions.delete(r):activeRegions.add(r);renderRegions();renderExercises();});
+}
+function renderExercises(){
+const list=filteredExercises();
+$("exerciseSummary").textContent=searchNumbers?`${list.length} matching exercise${list.length===1?"":"s"} • sorted by number`:`${list.length} exercise${list.length===1?"":"s"} available`;
+if(!list.length){$("exerciseGrid").innerHTML=`<div class="empty">${searchNumbers?"No exercises match those numbers.":"No exercises found for the selected body region."}</div>`;return;}
+$("exerciseGrid").innerHTML=list.map(e=>{
+const imgs=imageList(e),idx=Math.min(galleryIndex.get(e.id)||0,Math.max(imgs.length-1,0));galleryIndex.set(e.id,idx);
+const selected=selectedIds.has(e.id),src=imgs[idx]||"https://via.placeholder.com/1200x800?text=Exercise",count=imgs.length;
+return `<article class="exercise-card ${selected?"selected":""}">
+<div class="gallery">
+<img class="exercise-image" src="${escapeHtml(src)}" alt="${escapeHtml(e.name)}" onerror="this.src='https://via.placeholder.com/1200x800?text=Exercise'">
+${count>1?`<button class="gallery-arrow left" data-prev="${escapeHtml(e.id)}" aria-label="Previous image">‹</button><button class="gallery-arrow right" data-next="${escapeHtml(e.id)}" aria-label="Next image">›</button>`:""}
+${count?`<div class="image-counter">${idx+1} / ${count}</div>`:""}
+</div>
+<div class="card-body">
+<div class="card-top"><div><h3 class="card-title">${escapeHtml(e.name)}</h3><span class="badge">${escapeHtml(e.region)}</span></div><div class="number-badge">#${exerciseNumber(e)}</div></div>
+<p class="description">${escapeHtml(e.description)}</p>
+<div class="card-actions"><label class="check"><input type="checkbox" data-check="${escapeHtml(e.id)}" ${selected?"checked":""}> Select</label>${e.video?`<a class="video-btn" href="${escapeHtml(e.video)}" target="_blank" rel="noopener">Video</a>`:""}</div>
+</div></article>`;
+}).join("");
+document.querySelectorAll("[data-check]").forEach(input=>input.onchange=()=>{let id=input.dataset.check;input.checked?selectedIds.add(id):selectedIds.delete(id);renderExercises();renderSend();});
+document.querySelectorAll("[data-prev]").forEach(b=>b.onclick=()=>changeGallery(b.dataset.prev,-1));
+document.querySelectorAll("[data-next]").forEach(b=>b.onclick=()=>changeGallery(b.dataset.next,1));
+}
+function changeGallery(id,delta){
+const e=exercises.find(x=>x.id===id),imgs=imageList(e);if(!imgs.length)return;
+let idx=galleryIndex.get(id)||0;idx=(idx+delta+imgs.length)%imgs.length;galleryIndex.set(id,idx);renderExercises();
+}
+function renderSend(){
+$("selectedCount").textContent=`(${selectedIds.size})`;
+const list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));
+if(!list.length){$("selectedList").innerHTML=`<div class="empty">No exercises selected yet. Go back to Exercise and check what you want the patient to do.</div>`;return;}
+$("selectedList").innerHTML=list.map(e=>{let image=imageList(e)[0]||"https://via.placeholder.com/300x200?text=Exercise";return`<div class="selected-item"><img src="${escapeHtml(image)}" alt=""><div><strong>#${exerciseNumber(e)} — ${escapeHtml(e.name)}</strong><small>${escapeHtml(e.region)}</small></div></div>`;}).join("");
+}
+function switchTab(tabId){
+document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tabId));
+["exerciseTab","sendTab","adminTab"].forEach(id=>$(id).classList.toggle("hidden",id!==tabId));
+if(tabId==="sendTab")renderSend();
+if(tabId==="adminTab")renderAdmin();
+}
+async function loadExercises(){
+try{
+const snap=await getDocs(query(collection(db,"exercises"),orderBy("number","asc")));
+exercises=snap.docs.map(d=>({id:d.id,...d.data()}));
+if(!exercises.length)exercises=fallbackExercises;
+}catch(err){
+console.warn("Firestore load:",err);
+try{
+const snap=await getDocs(collection(db,"exercises"));
+exercises=snap.docs.map(d=>({id:d.id,...d.data()}));
+}catch(e){exercises=fallbackExercises;$("exerciseSummary").textContent="Demo exercises are shown until Firestore is available.";}
+}
+exercises=sortedExercises(exercises);renderRegions();renderExercises();renderSend();
+}
+async function checkAdmin(user){
+if(!user)return false;
+try{const snap=await getDoc(doc(db,"users",user.uid));return snap.exists()&&snap.data().role==="admin";}
+catch(e){console.warn("Admin check:",e);return false;}
+}
+function showAdmin(){
+if(currentUser&&isAdmin){switchTab("adminTab");return;}
+$("loginEmail").value=currentUser?.email||"";
+$("loginPassword").value="";
+$("loginNotice").innerHTML="";
+$("loginModal").classList.remove("hidden");
+}
+function renderAdmin(){
+if(!isAdmin){$("adminContent").innerHTML=`<div class="empty">Admin access required. Please log in from the Admin button.</div>`;return;}
+const list=sortedExercises(exercises.filter(e=>!String(e.id).startsWith("demo")));
+$("adminContent").innerHTML=`<div class="admin-panel">
+<div class="admin-toolbar"><div><strong>Exercise library</strong><div style="color:#667085;font-size:13px">${list.length} Firestore exercises</div></div>
+<div style="display:flex;gap:8px"><button class="btn btn-primary" id="addExerciseBtn">+ Add exercise</button><button class="btn btn-outline" id="logoutBtn">Logout</button></div></div>
+<div class="admin-list">${list.map(e=>`<div class="admin-row"><div class="meta"><div class="admin-number">#${exerciseNumber(e)}</div><img src="${escapeHtml(imageList(e)[0]||"https://via.placeholder.com/300x200?text=Exercise")}" alt=""><div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(e.region)}</div></div></div><div class="admin-row-actions"><button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button><button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button></div></div>`).join("")||`<div class="empty">No Firestore exercises yet. Add your first one.</div>`}</div></div>`;
+$("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");};
+document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openExerciseModal(b.dataset.edit));document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteExercise(b.dataset.delete));
+}
+async function nextExerciseNumber(){
+const nums=exercises.map(exerciseNumber).filter(n=>Number.isFinite(n)&&n<999999);return nums.length?Math.max(...nums)+1:1;
+}
+function openExerciseModal(id=null){
+$("exerciseForm").reset();$("exerciseId").value="";$("formNotice").innerHTML="";
+$("exerciseModalTitle").textContent=id?"Edit exercise":"Add exercise";
+if(id){
+const e=exercises.find(x=>x.id===id);if(!e)return;
+$("exerciseId").value=e.id;$("fNumber").value=exerciseNumber(e);$("fName").value=e.name||"";$("fRegion").value=e.region||"Shoulder";$("fDescription").value=e.description||"";$("fImages").value=(e.images||[]).join("\n");$("fVideo").value=e.video||"";
+}else{$("fNumber").value=nextExerciseNumber();}
+$("exerciseModal").classList.remove("hidden");
+}
+async function saveExercise(ev){
+ev.preventDefault();if(!isAdmin){$("formNotice").innerHTML=`<div class="notice error">Admin access required.</div>`;return;}
+const id=$("exerciseId").value.trim(),number=Number($("fNumber").value)||await nextExerciseNumber();
+const payload={number,name:$("fName").value.trim(),region:$("fRegion").value,description:$("fDescription").value.trim(),images:$("fImages").value.split("\n").map(x=>x.trim()).filter(Boolean),video:$("fVideo").value.trim(),updatedAt:serverTimestamp()};
+try{
+if(id)await updateDoc(doc(db,"exercises",id),payload);else{payload.createdAt=serverTimestamp();await addDoc(collection(db,"exercises"),payload);}
+$("exerciseModal").classList.add("hidden");await loadExercises();renderAdmin();
+}catch(e){console.error(e);$("formNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
+}
+async function deleteExercise(id){
+if(!isAdmin||!confirm("Delete this exercise?"))return;
+try{await deleteDoc(doc(db,"exercises",id));selectedIds.delete(id);await loadExercises();renderAdmin();}catch(e){alert(e.message);}
+}
+async function login(){
+$("loginNotice").innerHTML="";
+const email=$("loginEmail").value.trim(),password=$("loginPassword").value;
+if(!email||!password){$("loginNotice").innerHTML=`<div class="notice error">Please enter email and password.</div>`;return;}
+try{await signInWithEmailAndPassword(auth,email,password);$("loginNotice").innerHTML=`<div class="notice ok">Login successful. Checking admin access...</div>`;}
+catch(e){
+let msg=e.code==="auth/invalid-credential"?"Email or password is incorrect.":e.code==="auth/unauthorized-domain"?"This GitHub domain is not authorized in Firebase Authentication.":e.message;
+$("loginNotice").innerHTML=`<div class="notice error">${escapeHtml(msg)}</div>`;
+}
+}
+function parseSearchNumbers(){
+const raw=$("exerciseSearch").value.trim();if(!raw){searchNumbers=null;renderExercises();return;}
+const nums=raw.split(/[\s,;]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0);searchNumbers=nums.length?new Set(nums):new Set([-1]);renderExercises();
+}
+function whatsapp(){
+const patient=$("patientName").value.trim(),list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));if(!list.length){alert("Select at least one exercise.");return;}
+let text=`Home Exercise Program${patient?` for ${patient}`:""}\n\n`;
+list.forEach(e=>{text+=`#${exerciseNumber(e)} — ${e.name}\n${e.description}\n`;if(e.video)text+=`Video: ${e.video}\n`;text+="\n";});
+window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
+}
+async function makePdf(){
+const patient=$("patientName").value.trim(),list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));if(!list.length){alert("Select at least one exercise.");return;}
+const clone=$("pdfArea").cloneNode(true);clone.querySelectorAll(".no-print").forEach(x=>x.remove());
+const title=document.createElement("div");title.innerHTML=`<h1 style="font-family:Arial;margin:0 0 8px">Home Exercise Program</h1><p style="font-family:Arial;color:#555">${patient?`Patient: ${escapeHtml(patient)}`:""}</p>`;clone.prepend(title);clone.style.padding="20px";
+const temp=document.createElement("div");temp.style.background="white";temp.appendChild(clone);document.body.appendChild(temp);
+await html2pdf().set({margin:10,filename:`home-exercise-program${patient?"-"+patient.replace(/\s+/g,"-"):""}.pdf`,image:{type:"jpeg",quality:.92},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}}).from(temp).save();temp.remove();
+}
 
-  let exercises = [];
-  let selectedIds = new Set();
-  let activeRegions = new Set();
-  let currentUser = null;
-  let isAdmin = false;
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+$("clearFilters").onclick=()=>{activeRegions.clear();renderRegions();renderExercises();};
+$("searchBtn").onclick=parseSearchNumbers;$("clearSearchBtn").onclick=()=>{$("exerciseSearch").value="";searchNumbers=null;renderExercises();};
+$("exerciseSearch").addEventListener("keydown",e=>{if(e.key==="Enter")parseSearchNumbers();});
+$("backBtn").onclick=()=>switchTab("exerciseTab");$("whatsappBtn").onclick=whatsapp;$("pdfBtn").onclick=makePdf;$("adminOpenBtn").onclick=showAdmin;$("loginBtn").onclick=login;
+$("exerciseForm").addEventListener("submit",saveExercise);document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
+$("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
 
-  const $ = (id) => document.getElementById(id);
+onAuthStateChanged(auth,async user=>{
+currentUser=user;isAdmin=await checkAdmin(user);
+if(user&&isAdmin){$("loginModal").classList.add("hidden");switchTab("adminTab");renderAdmin();}
+});
 
-  function driveToImageUrl(url){
-    if(!url) return "";
-    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if(match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-    const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if(idMatch) return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
-    return url;
-  }
-
-  function escapeHtml(s=""){
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-  }
-
-  function renderRegions(){
-    $("regions").innerHTML = REGIONS.map(r => `
-      <button class="region ${activeRegions.has(r) ? "active":""}" data-region="${escapeHtml(r)}">${escapeHtml(r)}</button>
-    `).join("");
-    document.querySelectorAll(".region").forEach(btn => btn.onclick = () => {
-      const r = btn.dataset.region;
-      activeRegions.has(r) ? activeRegions.delete(r) : activeRegions.add(r);
-      renderRegions(); renderExercises();
-    });
-  }
-
-  function filteredExercises(){
-    if(activeRegions.size===0) return exercises;
-    return exercises.filter(e => activeRegions.has(e.region));
-  }
-
-  function renderExercises(){
-    const list = filteredExercises();
-    $("exerciseSummary").textContent = `${list.length} exercise${list.length===1?"":"s"} available`;
-    if(!list.length){
-      $("exerciseGrid").innerHTML = `<div class="empty">No exercises found for the selected body region.</div>`;
-      return;
-    }
-    $("exerciseGrid").innerHTML = list.map(e => {
-      const selected = selectedIds.has(e.id);
-      const image = driveToImageUrl((e.images||[])[0]) || "https://via.placeholder.com/900x600?text=Exercise";
-      return `
-        <article class="exercise-card ${selected?"selected":""}">
-          <img class="exercise-image" src="${escapeHtml(image)}" alt="${escapeHtml(e.name)}" onerror="this.src='https://via.placeholder.com/900x600?text=Exercise'">
-          <div class="card-body">
-            <div class="card-top">
-              <div><h3 class="card-title">${escapeHtml(e.name)}</h3><span class="badge">${escapeHtml(e.region)}</span></div>
-            </div>
-            <p class="description">${escapeHtml(e.description)}</p>
-            <div class="card-actions">
-              <label class="check"><input type="checkbox" data-check="${escapeHtml(e.id)}" ${selected?"checked":""}> Select</label>
-              ${e.video ? `<a class="video-btn" href="${escapeHtml(e.video)}" target="_blank" rel="noopener">Video</a>` : ""}
-            </div>
-          </div>
-        </article>`;
-    }).join("");
-    document.querySelectorAll("[data-check]").forEach(input => input.onchange = () => {
-      const id = input.dataset.check;
-      input.checked ? selectedIds.add(id) : selectedIds.delete(id);
-      renderExercises(); renderSend();
-    });
-  }
-
-  function renderSend(){
-    $("selectedCount").textContent = `(${selectedIds.size})`;
-    const list = exercises.filter(e => selectedIds.has(e.id));
-    if(!list.length){
-      $("selectedList").innerHTML = `<div class="empty">No exercises selected yet. Go back to Exercise and check what you want the patient to do.</div>`;
-      return;
-    }
-    $("selectedList").innerHTML = list.map(e => {
-      const image = driveToImageUrl((e.images||[])[0]) || "https://via.placeholder.com/300x200?text=Exercise";
-      return `<div class="selected-item">
-        <img src="${escapeHtml(image)}" alt="">
-        <div><strong>${escapeHtml(e.name)}</strong><small>${escapeHtml(e.region)}</small></div>
-      </div>`;
-    }).join("");
-  }
-
-  function switchTab(tabId){
-    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab===tabId));
-    ["exerciseTab","sendTab","adminTab"].forEach(id => $(id).classList.toggle("hidden", id!==tabId));
-    if(tabId==="sendTab") renderSend();
-  }
-
-  async function loadExercises(){
-    try{
-      const snap = await getDocs(query(collection(db,"exercises"), orderBy("createdAt","desc")));
-      exercises = snap.docs.map(d => ({id:d.id,...d.data()}));
-      if(!exercises.length) exercises = fallbackExercises;
-    }catch(err){
-      console.warn(err);
-      exercises = fallbackExercises;
-      $("exerciseSummary").textContent = "Demo data shown — connect Firebase to load your real library.";
-    }
-    renderRegions(); renderExercises(); renderSend();
-  }
-
-  async function checkAdmin(user){
-    if(!user) return false;
-    try{
-      const snap = await getDoc(doc(db,"users",user.uid));
-      return snap.exists() && snap.data().role === "admin";
-    }catch(e){ return false; }
-  }
-
-  async function showAdmin(){
-    if(!currentUser || !isAdmin){
-      $("loginModal").classList.remove("hidden");
-      return;
-    }
-    switchTab("adminTab");
-    renderAdmin();
-  }
-
-  function renderAdmin(){
-    if(!isAdmin){
-      $("adminContent").innerHTML = `<div class="empty">Admin access required.</div>`;
-      return;
-    }
-    $("adminContent").innerHTML = `
-      <div class="admin-panel">
-        <div class="admin-toolbar">
-          <div><strong>Exercise library</strong><div style="color:#667085;font-size:13px">${exercises.length} exercises</div></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" id="addExerciseBtn">+ Add exercise</button>
-            <button class="btn btn-outline" id="logoutBtn">Logout</button>
-          </div>
-        </div>
-        <div class="admin-list">
-          ${exercises.filter(e=>!String(e.id).startsWith("demo")).map(e=>`
-            <div class="admin-row">
-              <div class="meta">
-                <img src="${escapeHtml(driveToImageUrl((e.images||[])[0]))}" alt="">
-                <div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(e.region)}</div></div>
-              </div>
-              <div class="admin-row-actions">
-                <button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button>
-                <button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button>
-              </div>
-            </div>`).join("") || `<div class="empty">No Firestore exercises yet. Add your first one.</div>`}
-        </div>
-      </div>`;
-    $("addExerciseBtn").onclick = () => openExerciseModal();
-    $("logoutBtn").onclick = async () => { await signOut(auth); switchTab("exerciseTab"); };
-    document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openExerciseModal(b.dataset.edit));
-    document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteExercise(b.dataset.delete));
-  }
-
-  function openExerciseModal(id=null){
-    $("exerciseForm").reset(); $("exerciseId").value = "";
-    $("exerciseModalTitle").textContent = id ? "Edit exercise" : "Add exercise";
-    if(id){
-      const e = exercises.find(x=>x.id===id);
-      if(!e) return;
-      $("exerciseId").value=e.id; $("fName").value=e.name||""; $("fRegion").value=e.region||"Shoulder";
-      $("fDescription").value=e.description||""; $("fImages").value=(e.images||[]).join("\\n"); $("fVideo").value=e.video||"";
-    }
-    $("formNotice").innerHTML="";
-    $("exerciseModal").classList.remove("hidden");
-  }
-
-  async function saveExercise(ev){
-    ev.preventDefault();
-    if(!isAdmin){ $("formNotice").innerHTML=`<div class="notice error">Admin access required.</div>`; return; }
-    const id=$("exerciseId").value.trim();
-    const payload={
-      name:$("fName").value.trim(),
-      region:$("fRegion").value,
-      description:$("fDescription").value.trim(),
-      images:$("fImages").value.split("\\n").map(x=>x.trim()).filter(Boolean),
-      video:$("fVideo").value.trim(),
-      updatedAt:serverTimestamp()
-    };
-    try{
-      if(id) await updateDoc(doc(db,"exercises",id),payload);
-      else { payload.createdAt=serverTimestamp(); await addDoc(collection(db,"exercises"),payload); }
-      $("exerciseModal").classList.add("hidden");
-      await loadExercises(); renderAdmin();
-    }catch(e){
-      console.error(e);
-      $("formNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;
-    }
-  }
-
-  async function deleteExercise(id){
-    if(!confirm("Delete this exercise?")) return;
-    try{
-      await deleteDoc(doc(db,"exercises",id));
-      selectedIds.delete(id);
-      await loadExercises(); renderAdmin();
-    }catch(e){ alert(e.message); }
-  }
-
-  async function login(){
-    $("loginNotice").innerHTML="";
-    try{
-      await signInWithEmailAndPassword(auth,$("loginEmail").value.trim(),$("loginPassword").value);
-      // Authentication state listener below will verify the admin role
-      // and open the Admin panel automatically.
-    }catch(e){
-      $("loginNotice").innerHTML=`<div class="notice error">Login failed: ${escapeHtml(e.message)}</div>`;
-    }
-  }
-
-  function whatsapp(){
-    const patient = $("patientName").value.trim();
-    const list = exercises.filter(e=>selectedIds.has(e.id));
-    if(!list.length){ alert("Select at least one exercise."); return; }
-    let text = `Home Exercise Program${patient ? ` for ${patient}` : ""}\\n\\n`;
-    list.forEach((e,i)=>{
-      text += `${i+1}. ${e.name} — ${e.region}\\n${e.description}\\n`;
-      if(e.video) text += `Video: ${e.video}\\n`;
-      text += "\\n";
-    });
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
-  }
-
-  async function makePdf(){
-    const patient = $("patientName").value.trim();
-    const list = exercises.filter(e=>selectedIds.has(e.id));
-    if(!list.length){ alert("Select at least one exercise."); return; }
-    const clone = $("pdfArea").cloneNode(true);
-    clone.querySelectorAll(".no-print").forEach(x=>x.remove());
-    const title=document.createElement("div");
-    title.innerHTML=`<h1 style="font-family:Arial;margin:0 0 8px">Home Exercise Program</h1><p style="font-family:Arial;color:#555">${patient ? `Patient: ${escapeHtml(patient)}` : ""}</p>`;
-    clone.prepend(title);
-    clone.style.padding="20px";
-    const temp=document.createElement("div"); temp.style.background="white"; temp.appendChild(clone); document.body.appendChild(temp);
-    await html2pdf().set({
-      margin:10, filename:`home-exercise-program${patient?'-'+patient.replace(/\\s+/g,'-'):''}.pdf`,
-      image:{type:"jpeg",quality:.92}, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}
-    }).from(temp).save();
-    temp.remove();
-  }
-
-  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
-  $("clearFilters").onclick=()=>{activeRegions.clear();renderRegions();renderExercises()};
-  $("backBtn").onclick=()=>switchTab("exerciseTab");
-  $("whatsappBtn").onclick=whatsapp;
-  $("pdfBtn").onclick=makePdf;
-  $("adminOpenBtn").onclick=showAdmin;
-  $("loginBtn").onclick=login;
-  $("exerciseForm").addEventListener("submit",saveExercise);
-  document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
-  $("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
-
-  onAuthStateChanged(auth, async user=>{
-    currentUser=user;
-    isAdmin=await checkAdmin(user);
-
-    if(user){
-      if(isAdmin){
-        $("loginModal").classList.add("hidden");
-        switchTab("adminTab");
-        renderAdmin();
-      }else{
-        $("loginNotice").innerHTML=`<div class="notice error">This account is logged in, but it is not marked as admin in Firestore.</div>`;
-        $("loginModal").classList.remove("hidden");
-      }
-    }
-  });
-
-  loadExercises();
+loadExercises();
 </script>
 </body>
 </html>
