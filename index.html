@@ -98,7 +98,7 @@ main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display
 <div class="field"><label>Email</label><input id="loginEmail" type="email" placeholder="admin@example.com" autocomplete="username"></div>
 <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password"></div>
 <button class="btn btn-primary" id="loginBtn">Login</button>
-<div id="loginNotice"></div>
+<div id="loginNotice"></div><div style="margin-top:12px;color:#667085;font-size:12px">Admin access is checked using your Firebase UID and the Firestore <b>users</b> document.</div>
 </div>
 </div>
 </div>
@@ -148,7 +148,7 @@ const fallbackExercises=[
 {number:3,id:"demo3",name:"Cat-Cow",region:"Lower Back",description:"On hands and knees, gently alternate between rounding the spine and extending it. Keep the movement slow and comfortable.",images:["https://images.unsplash.com/photo-1603988363607-e1e4a66962c6?auto=format&fit=crop&w=1200&q=85"],video:"https://www.youtube.com/results?search_query=cat+cow+exercise"}
 ];
 
-let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null;
+let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null,adminCheckError="";
 const galleryIndex=new Map();
 const $=id=>document.getElementById(id);
 
@@ -226,16 +226,33 @@ exercises=snap.docs.map(d=>({id:d.id,...d.data()}));
 exercises=sortedExercises(exercises);renderRegions();renderExercises();renderSend();
 }
 async function checkAdmin(user){
+adminCheckError="";
 if(!user)return false;
-try{const snap=await getDoc(doc(db,"users",user.uid));return snap.exists()&&snap.data().role==="admin";}
-catch(e){console.warn("Admin check:",e);return false;}
+try{
+const snap=await getDoc(doc(db,"users",user.uid));
+if(!snap.exists()){
+adminCheckError="No Firestore document was found in users with this exact Firebase UID.";
+return false;
+}
+const role=String(snap.data().role||"").trim().toLowerCase();
+if(role!=="admin"){
+adminCheckError='The role field must be exactly "admin".';
+return false;
+}
+return true;
+}catch(e){
+adminCheckError=e?.message||String(e);
+console.error("Admin check failed:",e);
+return false;
+}
 }
 function showAdmin(){
 if(currentUser&&isAdmin){switchTab("adminTab");return;}
-$("loginEmail").value=currentUser?.email||"";
+$("loginEmail").value="";
 $("loginPassword").value="";
 $("loginNotice").innerHTML="";
 $("loginModal").classList.remove("hidden");
+setTimeout(()=>$("loginEmail").focus(),50);
 }
 function renderAdmin(){
 if(!isAdmin){$("adminContent").innerHTML=`<div class="empty">Admin access required. Please log in from the Admin button.</div>`;return;}
@@ -275,11 +292,37 @@ try{await deleteDoc(doc(db,"exercises",id));selectedIds.delete(id);await loadExe
 async function login(){
 $("loginNotice").innerHTML="";
 const email=$("loginEmail").value.trim(),password=$("loginPassword").value;
-if(!email||!password){$("loginNotice").innerHTML=`<div class="notice error">Please enter email and password.</div>`;return;}
-try{await signInWithEmailAndPassword(auth,email,password);$("loginNotice").innerHTML=`<div class="notice ok">Login successful. Checking admin access...</div>`;}
-catch(e){
-let msg=e.code==="auth/invalid-credential"?"Email or password is incorrect.":e.code==="auth/unauthorized-domain"?"This GitHub domain is not authorized in Firebase Authentication.":e.message;
+if(!email||!password){
+$("loginNotice").innerHTML=`<div class="notice error">Please enter email and password.</div>`;
+return;
+}
+const btn=$("loginBtn");
+btn.disabled=true;
+btn.textContent="Logging in...";
+try{
+const cred=await signInWithEmailAndPassword(auth,email,password);
+currentUser=cred.user;
+isAdmin=await checkAdmin(currentUser);
+if(isAdmin){
+$("loginModal").classList.add("hidden");
+switchTab("adminTab");
+renderAdmin();
+}else{
+const msg=adminCheckError||"This account is not an admin.";
+$("loginNotice").innerHTML=`<div class="notice error"><strong>Login worked, but Admin access was not confirmed.</strong><br>${escapeHtml(msg)}<br><br>Check Firestore: users → your exact Firebase UID → role = admin.</div>`;
+}
+}catch(e){
+console.error("Login failed:",e);
+let msg="Login failed.";
+if(e.code==="auth/invalid-credential"||e.code==="auth/wrong-password"||e.code==="auth/user-not-found")msg="Email or password is incorrect.";
+else if(e.code==="auth/unauthorized-domain")msg="This GitHub Pages domain is not authorized in Firebase Authentication.";
+else if(e.code==="auth/operation-not-allowed")msg="Email/Password sign-in is not enabled in Firebase Authentication.";
+else if(e.code==="auth/too-many-requests")msg="Too many attempts. Please wait and try again.";
+else if(e.message)msg=e.message;
 $("loginNotice").innerHTML=`<div class="notice error">${escapeHtml(msg)}</div>`;
+}finally{
+btn.disabled=false;
+btn.textContent="Login";
 }
 }
 function parseSearchNumbers(){
@@ -309,8 +352,16 @@ $("exerciseForm").addEventListener("submit",saveExercise);document.querySelector
 $("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
 
 onAuthStateChanged(auth,async user=>{
-currentUser=user;isAdmin=await checkAdmin(user);
-if(user&&isAdmin){$("loginModal").classList.add("hidden");switchTab("adminTab");renderAdmin();}
+currentUser=user;
+if(!user){isAdmin=false;return;}
+isAdmin=await checkAdmin(user);
+if(isAdmin){
+$("loginModal").classList.add("hidden");
+switchTab("adminTab");
+renderAdmin();
+}else{
+console.warn("Signed-in user is not confirmed as admin:",adminCheckError);
+}
 });
 
 loadExercises();
