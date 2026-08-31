@@ -1,9 +1,0 @@
-{
-  "name":"Home Exercise Prescription",
-  "short_name":"HomeEx",
-  "start_url":"./",
-  "display":"standalone",
-  "background_color":"#f6f8fc",
-  "theme_color":"#1e3a8a",
-  "description":"Home exercise prescription for patients"
-}
