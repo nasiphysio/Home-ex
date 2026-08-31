@@ -36,6 +36,8 @@ main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display
 <style>
 .direct-only{display:none}
 body.direct-mode #adminBtn,
+body.direct-mode #adminTab,
+body.direct-mode #loginModal,
 body.direct-mode .tabbar,
 body.direct-mode #searchBox,
 body.direct-mode #regions{display:none!important}
@@ -474,8 +476,8 @@ const linkNumbers=list.map(e=>exerciseNumber(e)).join(",");
 const currentUrl=new URL(window.location.href);
 currentUrl.search="";
 currentUrl.hash="";
-const base=`${currentUrl.origin}${currentUrl.pathname}`.replace(/\/$/,"");
-const directLink=`${base}/#ex=${encodeURIComponent(linkNumbers)}`;
+const base=currentUrl.href.replace(/\/$/,"");
+const directLink=`${base}#ex=${encodeURIComponent(linkNumbers)}`;
 let text="";
 if(patient)text+=`برنامج التمارين للمريض: ${patient}\n\n`;
 list.forEach(e=>{
@@ -504,16 +506,21 @@ onAuthStateChanged(auth,async user=>{
 currentUser=user;
 if(!user){isAdmin=false;return;}
 isAdmin=await checkAdmin(user);
-if(isAdmin){
+if(isAdmin && !directExerciseNumbers){
 $("loginModal").classList.add("hidden");
 switchTab("adminTab");
 renderAdmin();
-}else{
+}else if(!isAdmin){
 console.warn("Signed-in user is not confirmed as admin:",adminCheckError);
 }
 });
 
-directExerciseNumbers=getDirectExerciseNumbers();loadSettings().then(()=>loadExercises());
+directExerciseNumbers=getDirectExerciseNumbers();
+if(directExerciseNumbers){
+document.body.classList.add("direct-mode");
+switchTab("exerciseTab");
+}
+loadSettings().then(()=>loadExercises());
 </script>
 </body>
 </html>
