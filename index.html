@@ -33,6 +33,17 @@ main{max-width:1180px;margin:25px auto;padding:0 20px 70px}.section-head{display
 @media(max-width:700px){.brand{align-items:flex-start}.brand h1{font-size:21px}.admin-btn{font-size:12px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.tabs-wrap{padding:0 10px}.tabs{border-radius:13px}main{padding:0 12px 50px}.exercise-grid{grid-template-columns:1fr}.exercise-image{height:270px}.search-row{flex-direction:column;align-items:stretch}.search-row .btn{width:100%}.admin-row{align-items:flex-start;flex-direction:column}.admin-row-actions{width:100%}.admin-row-actions .btn{flex:1}}
 @media print{body{background:#fff}.no-print{display:none!important}#pdfArea{display:block!important}.send-panel{box-shadow:none;border:0}}
 </style>
+<style>
+.direct-only{display:none}
+body.direct-mode .direct-only{display:block}
+body.direct-mode #searchBox,
+body.direct-mode #regions,
+body.direct-mode #sendTab,
+body.direct-mode .tabbar .tab[data-tab="sendTab"],
+body.direct-mode .hero .admin-btn{display:none!important}
+body.direct-mode .exercise-card .select-wrap,
+body.direct-mode .exercise-card input[type="checkbox"]{display:none!important}
+</style>
 </head>
 <body>
 <div class="app">
@@ -196,6 +207,10 @@ document.querySelectorAll(".region").forEach(btn=>btn.onclick=()=>{let r=btn.dat
 }
 function renderExercises(){
 const list=filteredExercises();
+if(directExerciseNumbers){
+const title=$("exerciseSummary");
+if(title)title.textContent=`التمارين المطلوبة للمريض: ${directExerciseNumbers.join("، ")}`;
+}
 $("exerciseSummary").textContent=searchNumbers?`${list.length} matching exercise${list.length===1?"":"s"} • sorted by number`:`${list.length} exercise${list.length===1?"":"s"} available`;
 if(!list.length){$("exerciseGrid").innerHTML=`<div class="empty">${searchNumbers?"No exercises match those numbers.":"No exercises found for the selected body region."}</div>`;return;}
 $("exerciseGrid").innerHTML=list.map(e=>{
@@ -318,8 +333,8 @@ $("adminContent").innerHTML=`<div class="admin-panel">
 <div style="display:flex;gap:8px"><button class="btn btn-primary" id="addExerciseBtn">+ Add exercise</button><button class="btn btn-outline" id="logoutBtn">Logout</button></div></div>
 
 <div class="admin-panel" style="margin-top:16px;padding:16px;border:1px solid #e5e7eb;border-radius:14px">
-<strong>Patient link used in WhatsApp</strong>
-<div style="color:#667085;font-size:13px;margin:5px 0 10px">This is the link the patient will open to search for the exercise numbers and view their images/videos. You can change it anytime.</div>
+<strong>Patient link (optional / legacy)</strong>
+<div style="color:#667085;font-size:13px;margin:5px 0 10px">لم يعد هذا الرابط مطلوبًا لإرسال التمارين؛ النظام الآن ينشئ رابطًا مباشرًا تلقائيًا من رابط موقعك الحالي.</div>
 <div class="field">
 <label>Patient media/search link</label>
 <input id="patientMediaLink" type="url" value="${escapeHtml(patientMediaLink)}" placeholder="https://your-site.github.io/Home-ex/">
@@ -469,9 +484,11 @@ const list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));
 if(!list.length){alert("Select at least one exercise.");return;}
 const numbers=list.map(e=>exerciseNumber(e)).join(" ");
 const linkNumbers=list.map(e=>exerciseNumber(e)).join(",");
-const base=patientMediaLink.split("#")[0].replace(/\/$/,"");
-const directLink=`${base}/?ex=${encodeURIComponent(linkNumbers)}`;
-let text=`ابحث بالارقام الاتية:\n${numbers}\n\n`;
+const currentUrl=new URL(window.location.href);
+currentUrl.search="";
+currentUrl.hash="";
+const directLink=`${currentUrl.origin}${currentUrl.pathname}${currentUrl.pathname.endsWith("/")?"":"/"}?ex=${encodeURIComponent(linkNumbers)}`;
+let text="";
 if(patient)text+=`برنامج التمارين للمريض: ${patient}\n\n`;
 list.forEach(e=>{
 text+=`${exerciseNumber(e)} - ${e.name}\n${e.description}\n\n`;
@@ -508,7 +525,9 @@ console.warn("Signed-in user is not confirmed as admin:",adminCheckError);
 }
 });
 
-directExerciseNumbers=getDirectExerciseNumbers();loadSettings().then(()=>loadExercises());
+directExerciseNumbers=getDirectExerciseNumbers();
+if(directExerciseNumbers)document.body.classList.add("direct-mode");
+loadSettings().then(()=>loadExercises());
 </script>
 </body>
 </html>
