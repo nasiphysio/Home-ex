@@ -639,6 +639,7 @@ switchTab("exerciseTab");
 loadSettings().then(()=>loadExercises());homeexTrackVisit();
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(e=>console.warn("Service worker registration failed",e)));}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();});
 
 async function homeexTrackVisit(){
   try{
