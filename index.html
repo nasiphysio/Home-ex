@@ -407,7 +407,7 @@ const box=$("adSlot");if(!box)return;
 const imgs=(adImageLinks||[]).map(driveToImageUrl).filter(Boolean);
 if(!imgs.length){box.style.display="none";box.innerHTML="";if(adTimer){clearInterval(adTimer);adTimer=null;}return;}
 box.style.display="block";let i=0;
-const paint=()=>{box.innerHTML=`<div class="ad-label">Advertisement</div><a href="${escapeHtml(imgs[i])}" target="_blank" rel="noopener" aria-label="Advertisement"><img src="${escapeHtml(imgs[i])}" alt="Advertisement" onerror="this.style.display='none'"></a>`;};
+const paint=()=>{box.innerHTML=`<div class="ad-label">Ad</div><a href="${escapeHtml(imgs[i])}" target="_blank" rel="noopener" aria-label="Advertisement"><img src="${escapeHtml(imgs[i])}" alt="Advertisement" onerror="this.style.display='none'"></a>`;};
 paint();if(adTimer){clearInterval(adTimer);adTimer=null;}if(imgs.length>1){adTimer=setInterval(()=>{i=(i+1)%imgs.length;paint();},Math.max(2,Number(adIntervalSeconds)||5)*1000);}
 }
 function renderAdmin(){
