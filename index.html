@@ -45,9 +45,9 @@ body.direct-mode input[type="checkbox"]{display:none!important}
 body.direct-mode .direct-only{display:block}
 </style>
 <style>
-.ad-slot{margin:10px 0 24px;min-height:0;border:1px solid rgba(148,163,184,.18);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 18px rgba(15,23,42,.05)}
-.ad-slot img{display:block;width:100%;height:110px;object-fit:cover}.ad-slot>a{display:block;text-decoration:none}
-.ad-label{padding:5px 10px;text-align:right;font-size:10px;color:#98a2b3;background:#fff}
+.ad-slot{margin:10px 0 24px;min-height:0;border:1px solid rgba(148,163,184,.18);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 18px rgba(15,23,42,.05);position:relative}
+.ad-slot img{display:block;width:100%;height:clamp(130px,20vw,260px);object-fit:cover}.ad-slot>a{display:block;text-decoration:none;position:relative}
+.ad-label{position:absolute;top:8px;right:10px;padding:3px 9px;font-size:10px;color:#fff;background:rgba(15,23,42,.55);border-radius:7px;backdrop-filter:blur(3px);z-index:1}
 .settings-grid{display:grid;gap:16px}
 .settings-card{margin-top:16px;border:1px solid var(--border);border-radius:16px;padding:18px;background:#fff}
 .settings-card h3{margin:0 0 5px;font-size:18px}
@@ -55,7 +55,7 @@ body.direct-mode .direct-only{display:block}
 .settings-textarea{min-height:110px;width:100%;resize:vertical}
 .footer a{color:#98a2b3;text-decoration:none}
 .footer a:hover{text-decoration:underline}
-@media(max-width:700px){.ad-slot img{height:85px}.hero-slide{background-position:center}}
+@media(max-width:700px){.hero-slide{background-position:center}}
 </style>
 <style>
 /* HomeEx responsive hero */
@@ -228,7 +228,7 @@ const fallbackExercises=[
 {number:3,id:"demo3",name:"Cat-Cow",region:"Lower Back",description:"On hands and knees, gently alternate between rounding the spine and extending it. Keep the movement slow and comfortable.",images:["https://images.unsplash.com/photo-1603988363607-e1e4a66962c6?auto=format&fit=crop&w=1200&q=85"],video:"https://www.youtube.com/results?search_query=cat+cow+exercise"}
 ];
 
-let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null,adminCheckError="";
+let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,isAdmin=false,searchNumbers=null,adminCheckError="",adminRawRole=null;
 let patientMediaLink=window.location.href.split("#")[0];
 let directExerciseNumbers=null,heroImageLinks=[],adImageLinks=[],heroTimer=null,adTimer=null,headerIntervalSeconds=4,adIntervalSeconds=5;
 const galleryIndex=new Map();
@@ -337,6 +337,7 @@ clearTimeout(loadingTimer);exercises=sortedExercises(exercises);renderRegions();
 }
 async function checkAdmin(user){
 adminCheckError="";
+adminRawRole=null;
 if(!user)return false;
 try{
 const snap=await getDoc(doc(db,"users",user.uid));
@@ -344,6 +345,7 @@ if(!snap.exists()){
 adminCheckError="No Firestore document was found in users with this exact Firebase UID.";
 return false;
 }
+adminRawRole=snap.data().role;
 const role=String(snap.data().role||"").trim().toLowerCase();
 if(role!=="admin"){
 adminCheckError='The role field must be exactly "admin".';
