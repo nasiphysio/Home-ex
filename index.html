@@ -84,6 +84,31 @@ body.direct-mode .direct-only{display:block}
 /* UI-only safety patch: do not alter app/Firebase logic */
 #footerAdminBtn{font-size:11px!important;opacity:.65!important}
 </style>
+<style id="homeex-pro">
+/* Pro / subscriptions / feature flags */
+.pro-btn{background:linear-gradient(135deg,#f59e0b,#d97706);border:0;color:#fff;padding:10px 15px;border-radius:12px;font-weight:800}
+.templates{display:flex;flex-wrap:wrap;gap:10px}
+.template-chip{border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;padding:10px 14px;border-radius:999px;font-weight:700}
+.template-chip.locked{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.dose-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.dose-row label{display:flex;align-items:center;gap:4px;font-size:12px;color:#667085;font-weight:600}
+.dose-row input{width:54px;border:1px solid #d0d5dd;border-radius:8px;padding:6px}
+.selected-item>div{flex:1}
+.pro-banner{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:11px 13px;font-size:13px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.brand-box{border:1px solid var(--border);border-radius:13px;padding:12px;margin:14px 0}
+.brand-box .form-grid{margin-top:10px}
+.pro-status{border-radius:12px;padding:14px;margin:14px 0;font-size:14px;line-height:1.7}
+.pro-status.ok{background:#ecfdf3;color:#047857}.pro-status.bad{background:#fef2f2;color:#b91c1c}
+.code-row{display:flex;justify-content:space-between;gap:12px;border:1px solid var(--border);border-radius:12px;padding:11px;flex-wrap:wrap;align-items:center}
+.code-row code{font-weight:800;font-size:14px}
+.code-meta{font-size:12px;color:#667085;line-height:1.6}
+.code-actions{display:flex;gap:6px;flex-wrap:wrap}.code-actions .btn{padding:7px 10px;font-size:12px}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px}
+.pill.ok{background:#dcfce7;color:#166534}.pill.bad{background:#fee2e2;color:#991b1b}.pill.wait{background:#e0e7ff;color:#3730a3}
+.feature-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f2f4f7;flex-wrap:wrap}
+.feature-row select{border:1px solid #d0d5dd;border-radius:9px;padding:8px}
+body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #footerProBtn{display:none!important}
+</style>
 </head>
 <body>
 <div class="app">
@@ -92,7 +117,7 @@ body.direct-mode .direct-only{display:block}
 <div class="header-inner">
 <div class="brand">
 <div><h1 id="homeLink" style="cursor:pointer">Home Exercise Prescription</h1><p>Choose exercises, then send the prescription to your patient.</p></div>
-<button class="admin-btn" id="adminOpenBtn">Admin</button>
+<div style="display:flex;gap:8px;align-items:center"><button class="pro-btn hidden" id="proOpenBtn">⭐ Pro</button><button class="admin-btn" id="adminOpenBtn">Admin</button></div>
 </div>
 </div>
 </header>
@@ -114,6 +139,11 @@ body.direct-mode .direct-only{display:block}
 <div class="search-help">Write exercise numbers separated by commas or spaces. The results will appear in number order.</div>
 </div>
 
+<div id="templatesSection" class="hidden">
+<div class="section-head"><div><h2>Protocols</h2><p>Ready-made programs. One tap selects all their exercises.</p></div></div>
+<div class="templates" id="templatesList"></div>
+</div>
+
 <div class="section-head"><div><h2>Body regions</h2><p>Select one or more areas to see suitable home exercises.</p></div><button class="btn btn-outline no-print" id="clearFilters">Clear</button></div>
 <div class="regions" id="regions"></div>
 
@@ -126,7 +156,21 @@ body.direct-mode .direct-only{display:block}
 <div class="section-head"><div><h2>Send prescription</h2><p>The WhatsApp message will contain exercise numbers, names and descriptions.</p></div></div>
 <div class="send-panel" id="pdfArea">
 <div class="no-print">
+<div id="proBanner" class="pro-banner hidden"><span>🔒 <b>Pro</b>: sets &amp; reps, your clinic details on the PDF, and ready-made protocols.</span><button class="btn btn-dark" type="button" id="bannerProBtn">Activate Pro</button></div>
 <div class="field"><label for="patientName">Patient name (optional)</label><input id="patientName" placeholder="e.g. Ahmed Mohamed"></div>
+<div id="brandBox" class="brand-box hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong>Your clinic details</strong><button class="btn btn-outline" type="button" id="brandToggleBtn">Edit</button></div>
+<div id="brandSummary" class="code-meta" style="margin-top:6px"></div>
+<div id="brandForm" class="hidden">
+<div class="form-grid">
+<div class="field"><label>Therapist name</label><input id="brandName" placeholder="Dr. ..."></div>
+<div class="field"><label>Clinic name</label><input id="brandClinic"></div>
+<div class="field"><label>Phone</label><input id="brandPhone" inputmode="tel"></div>
+<div class="field"><label>Logo image link (optional)</label><input id="brandLogo" placeholder="Google Drive or image URL"></div>
+</div>
+<div class="form-actions"><button class="btn btn-primary" type="button" id="brandSaveBtn">Save on this device</button></div>
+</div>
+</div>
 </div>
 <div id="selectedList" class="selected-list"></div>
 <div class="send-actions no-print">
@@ -149,6 +193,17 @@ body.direct-mode .direct-only{display:block}
 <div class="modal-card">
 <div class="modal-head"><h3>Admin login</h3><button class="close" data-close="loginModal">×</button></div>
 <div class="login-box" id="loginBox"></div>
+</div>
+</div>
+
+<div class="modal hidden" id="proModal">
+<div class="modal-card" style="width:min(480px,100%)">
+<div class="modal-head"><h3>⭐ HomeEx Pro</h3><button class="close" data-close="proModal">×</button></div>
+<div id="proStatus"></div>
+<div class="field"><label for="proCodeInput">Subscription code</label><input id="proCodeInput" placeholder="HX-XXXX-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase"></div>
+<div class="form-actions"><button class="btn btn-primary" id="proActivateBtn">Activate</button></div>
+<div id="proNotice"></div>
+<p class="code-meta" style="margin-top:14px">The code works on one device only. To get or renew a subscription, <a href="mailto:ahmed4nassef@gmail.com">contact us</a>.</p>
 </div>
 </div>
 
@@ -212,8 +267,8 @@ function homeexStartHeaderSlider(urls,seconds){
 }
 
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,getDoc,setDoc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut,signInAnonymously} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,getDoc,setDoc,serverTimestamp,query,orderBy,Timestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyDIDA8-KmZ9Pi5JHYjb8E2kgFQNF1_Zy70",
@@ -240,6 +295,11 @@ let exercises=[],selectedIds=new Set(),activeRegions=new Set(),currentUser=null,
 let patientMediaLink=window.location.href.split("#")[0];
 let directExerciseNumbers=null,heroImageLinks=[],adImageLinks=[],heroTimer=null,adTimer=null,headerIntervalSeconds=4,adIntervalSeconds=5;
 const galleryIndex=new Map();
+// Feature flags (settings/main.features). "off" = hidden for everyone, "all" = everyone, "pro" = subscribers + admin.
+let FEATURES={subscriptions:"off",templates:"off",dosage:"off",branding:"off"};
+let TEMPLATES=[],proActive=false,proInfo=null,codesCache=null;
+const dosage=new Map();
+const PRO_KEY="homeex_pro_code",BRAND_KEY="homeex_brand";
 const $=id=>document.getElementById(id);
 
 function driveToImageUrl(url){
@@ -311,7 +371,193 @@ function renderSend(){
 $("selectedCount").textContent=`(${selectedIds.size})`;
 const list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));
 if(!list.length){$("selectedList").innerHTML=`<div class="empty">No exercises selected yet. Go back to Exercise and check what you want the patient to do.</div>`;return;}
-$("selectedList").innerHTML=list.map(e=>{let image=imageList(e)[0]||PLACEHOLDER_IMG;return`<div class="selected-item"><img src="${escapeHtml(image)}" alt=""><div><strong>#${exerciseNumber(e)} — ${escapeHtml(e.name)}</strong><small>${escapeHtml(exerciseRegions(e).join(", "))}</small></div></div>`;}).join("");
+const withDose=featureOn("dosage");
+$("selectedList").innerHTML=list.map(e=>{let image=imageList(e)[0]||PLACEHOLDER_IMG;const d=dosage.get(e.id)||{};return`<div class="selected-item" data-item-id="${escapeHtml(e.id)}"><img src="${escapeHtml(image)}" alt=""><div><strong>#${exerciseNumber(e)} — ${escapeHtml(e.name)}</strong><small>${escapeHtml(exerciseRegions(e).join(", "))}</small>${withDose?`<div class="dose-row no-print">${[["sets","Sets"],["reps","Reps"],["hold","Hold (s)"],["freq","Times/day"]].map(([k,l])=>`<label>${l}<input type="number" min="0" data-dose="${escapeHtml(e.id)}" data-key="${k}" value="${escapeHtml(d[k]||"")}"></label>`).join("")}</div>`:""}</div></div>`;}).join("");
+document.querySelectorAll("[data-dose]").forEach(inp=>inp.oninput=()=>{const id=inp.dataset.dose,d={...(dosage.get(id)||{})};d[inp.dataset.key]=inp.value.trim();dosage.set(id,d);});
+}
+function doseText(id,ar){
+if(!featureOn("dosage"))return"";
+const d=dosage.get(id)||{},p=[];
+if(d.sets&&d.reps)p.push(ar?`${d.sets} مجموعات × ${d.reps} تكرار`:`${d.sets} sets × ${d.reps} reps`);
+else if(d.sets)p.push(ar?`${d.sets} مجموعات`:`${d.sets} sets`);
+else if(d.reps)p.push(ar?`${d.reps} تكرار`:`${d.reps} reps`);
+if(d.hold)p.push(ar?`ثبات ${d.hold} ثانية`:`hold ${d.hold}s`);
+if(d.freq)p.push(ar?`${d.freq} مرة في اليوم`:`${d.freq}× per day`);
+return p.join(" • ");
+}
+
+/* ---------- Pro: feature flags, subscription codes, branding, templates ---------- */
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}
+function featureOn(k){const m=FEATURES[k]||"off";if(m==="off")return false;if(m==="all")return true;return isAdmin||proActive;}
+function featureLocked(k){return FEATURES[k]==="pro"&&FEATURES.subscriptions==="on"&&!featureOn(k);}
+function subsOn(){return FEATURES.subscriptions==="on";}
+function fmtDate(ms){return ms?new Date(ms).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"—";}
+function getBrand(){try{return JSON.parse(lsGet(BRAND_KEY)||"{}")||{};}catch(e){return{};}}
+function applyFeatures(){
+const showPro=subsOn();
+$("proOpenBtn").classList.toggle("hidden",!showPro);
+$("footerProBtn").classList.toggle("hidden",!showPro);
+$("footerProSep").classList.toggle("hidden",!showPro);
+$("proOpenBtn").textContent=proActive?"⭐ Pro ✓":"⭐ Pro";
+$("proBanner").classList.toggle("hidden",!["dosage","branding","templates"].some(featureLocked));
+$("brandBox").classList.toggle("hidden",!featureOn("branding"));
+renderBrandSummary();renderTemplates();renderSend();
+}
+function renderBrandSummary(){
+const b=getBrand();
+$("brandSummary").textContent=[b.name,b.clinic,b.phone].filter(Boolean).join(" • ")||"Add your name, clinic and phone. They will appear on the PDF and the WhatsApp message.";
+}
+function renderTemplates(){
+const on=featureOn("templates"),locked=featureLocked("templates");
+$("templatesSection").classList.toggle("hidden",!(on||locked)||!TEMPLATES.length);
+if(locked){$("templatesList").innerHTML=`<button class="template-chip locked" id="tplLockedBtn">🔒 ${TEMPLATES.length} protocols — Pro</button>`;$("tplLockedBtn").onclick=openPro;return;}
+$("templatesList").innerHTML=TEMPLATES.map((t,i)=>`<button class="template-chip" data-tpl="${i}">${escapeHtml(t.name)}</button>`).join("");
+document.querySelectorAll("[data-tpl]").forEach(b=>b.onclick=()=>applyTemplate(TEMPLATES[Number(b.dataset.tpl)]));
+}
+function applyTemplate(t){
+const nums=new Set(t.numbers.map(Number));
+exercises.filter(e=>nums.has(exerciseNumber(e))).forEach(e=>selectedIds.add(e.id));
+$("exerciseSearch").value=[...nums].join(", ");searchNumbers=nums;
+renderExercises();renderSend();
+}
+function proStatusHtml(){
+if(proActive)return`<div class="pro-status ok">✅ Pro is active on this device.<br>Subscriber: <b>${escapeHtml(proInfo.name||"—")}</b><br>Valid until: <b>${fmtDate(proInfo.expiresAt)}</b> (${Math.max(0,Math.ceil((proInfo.expiresAt-Date.now())/864e5))} days left)</div>`;
+if(!proInfo)return"";
+const msg={missing:"This code was not found.",other:"This code is already activated on another device.",stopped:"This subscription has been stopped.",expired:`This subscription expired on ${fmtDate(proInfo.expiresAt)}. Contact us to renew — you keep the same code.`,error:"Could not check the subscription. Check your internet connection."}[proInfo.status];
+return msg?`<div class="pro-status bad">${escapeHtml(msg)}</div>`:"";
+}
+function openPro(){
+$("proStatus").innerHTML=proStatusHtml();$("proNotice").innerHTML="";
+$("proCodeInput").value=lsGet(PRO_KEY)||"";
+$("proModal").classList.remove("hidden");
+}
+async function ensureDeviceUser(){
+await auth.authStateReady();
+if(!auth.currentUser)await signInAnonymously(auth);
+return auth.currentUser;
+}
+function codeState(d,uid){
+const exp=d.expiresAt?.toMillis?.()||0;
+if(d.active===false)return{status:"stopped",expiresAt:exp};
+if(d.deviceUid&&d.deviceUid!==uid)return{status:"other",expiresAt:exp};
+if(exp<=Date.now())return{status:"expired",expiresAt:exp};
+return{status:"active",expiresAt:exp,name:d.name};
+}
+async function refreshPro(){
+proActive=false;proInfo=null;
+const code=lsGet(PRO_KEY);
+if(subsOn()&&code){
+try{
+const user=await ensureDeviceUser();
+const snap=await getDoc(doc(db,"codes",code));
+proInfo=snap.exists()?codeState(snap.data(),user.uid):{status:"missing"};
+// A code must be bound to this device to count; an unbound one needs Activate again.
+if(snap.exists()&&!snap.data().deviceUid)proInfo={status:"missing"};
+proActive=proInfo.status==="active";
+}catch(e){console.warn("Pro check failed:",e);proInfo={status:"error"};}
+}
+applyFeatures();
+}
+async function activatePro(){
+const code=$("proCodeInput").value.trim().toUpperCase().replace(/\s+/g,"");
+const note=t=>$("proNotice").innerHTML=`<div class="notice error">${escapeHtml(t)}</div>`;
+if(!/^[A-Z0-9-]{6,40}$/.test(code)){note("Please enter a valid code.");return;}
+const btn=$("proActivateBtn");btn.disabled=true;btn.textContent="Checking...";
+try{
+const user=await ensureDeviceUser(),ref=doc(db,"codes",code),snap=await getDoc(ref);
+if(!snap.exists()){note("This code was not found.");return;}
+const st=codeState(snap.data(),user.uid);
+if(st.status==="stopped"){note("This subscription has been stopped.");return;}
+if(st.status==="other"){note("This code is already activated on another device. Contact us if you changed your phone.");return;}
+if(st.status==="expired"){note(`This subscription expired on ${fmtDate(st.expiresAt)}. Contact us to renew.`);return;}
+if(!snap.data().deviceUid)await updateDoc(ref,{deviceUid:user.uid,activatedAt:serverTimestamp()});
+lsSet(PRO_KEY,code);
+await refreshPro();
+$("proStatus").innerHTML=proStatusHtml();
+$("proNotice").innerHTML=`<div class="notice ok">Pro activated. Enjoy!</div>`;
+}catch(e){console.error(e);note(e.code==="auth/admin-restricted-operation"?"Activation is not available yet. Please contact us.":(e.message||"Activation failed."));}
+finally{btn.disabled=false;btn.textContent="Activate";}
+}
+
+/* Admin: subscription codes */
+function newCode(){
+const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=crypto.getRandomValues(new Uint8Array(12));
+const s=[...r].map(x=>A[x%A.length]).join("");
+return`HX-${s.slice(0,4)}-${s.slice(4,8)}-${s.slice(8,12)}`;
+}
+function addMonths(ms,months){const d=new Date(ms);d.setMonth(d.getMonth()+months);return d.getTime();}
+function waPhone(p){let n=String(p||"").replace(/\D/g,"");if(n.startsWith("0"))n="2"+n;return n;}
+function codeMessage(c){
+const site=window.location.href.split("#")[0].split("?")[0];
+return`اشتراك HomeEx Pro ⭐\n\nالكود: ${c.id}\nصالح حتى: ${fmtDate(c.expiresAt)}\n\nافتح الموقع ${site}\nواضغط على زرار Pro واكتب الكود.\nالكود بيشتغل على جهاز واحد بس.`;
+}
+async function loadCodes(){
+try{const snap=await getDocs(collection(db,"codes"));codesCache=snap.docs.map(d=>({id:d.id,...d.data(),expiresAt:d.data().expiresAt?.toMillis?.()||0})).sort((a,b)=>a.expiresAt-b.expiresAt);}
+catch(e){console.error(e);codesCache={error:e.message};}
+renderCodes();
+}
+function renderCodes(){
+const box=$("codesBox");if(!box)return;
+if(!codesCache){box.innerHTML=`<div class="code-meta">Loading…</div>`;return;}
+if(codesCache.error){box.innerHTML=`<div class="notice error">تعذر تحميل الأكواد: ${escapeHtml(codesCache.error)}<br>غالباً قواعد Firestore لسه محتاجة تتحدث (collection: codes).</div>`;return;}
+if(!codesCache.length){box.innerHTML=`<div class="empty">لسه مفيش مشتركين.</div>`;return;}
+box.innerHTML=codesCache.map(c=>{
+const expired=c.expiresAt<=Date.now(),days=Math.ceil((c.expiresAt-Date.now())/864e5);
+const pill=c.active===false?`<span class="pill bad">موقوف</span>`:expired?`<span class="pill bad">منتهي</span>`:!c.deviceUid?`<span class="pill wait">لم يُفعّل بعد</span>`:`<span class="pill ok">شغال • ${days} يوم</span>`;
+return`<div class="code-row"><div><code>${escapeHtml(c.id)}</code> ${pill}<div class="code-meta">${escapeHtml(c.name||"—")}${c.phone?" • "+escapeHtml(c.phone):""} • ينتهي ${fmtDate(c.expiresAt)}${c.deviceUid?" • مربوط بجهاز":""}</div></div>
+<div class="code-actions">
+<select data-renew-len="${escapeHtml(c.id)}" class="btn btn-outline"><option value="1">شهر</option><option value="3">3 شهور</option><option value="6">6 شهور</option><option value="12">سنة</option></select>
+<button class="btn btn-primary" data-renew="${escapeHtml(c.id)}">تجديد</button>
+${c.deviceUid?`<button class="btn btn-outline" data-reset="${escapeHtml(c.id)}">فك الجهاز</button>`:""}
+<button class="btn btn-outline" data-toggle="${escapeHtml(c.id)}">${c.active===false?"تشغيل":"إيقاف"}</button>
+<button class="btn btn-green" data-wa="${escapeHtml(c.id)}">واتساب</button>
+<button class="btn btn-danger" data-delcode="${escapeHtml(c.id)}">حذف</button>
+</div></div>`;}).join("");
+const find=id=>codesCache.find(c=>c.id===id);
+const act=async(fn)=>{try{await fn();await loadCodes();}catch(e){alert(e.message);}};
+box.querySelectorAll("[data-renew]").forEach(b=>b.onclick=()=>{const c=find(b.dataset.renew),m=Number(box.querySelector(`[data-renew-len="${CSS.escape(c.id)}"]`).value);
+const next=addMonths(Math.max(Date.now(),c.expiresAt),m);
+if(confirm(`تجديد ${c.id} لحد ${fmtDate(next)}؟`))act(()=>updateDoc(doc(db,"codes",c.id),{expiresAt:Timestamp.fromMillis(next),active:true,renewedAt:serverTimestamp()}));});
+box.querySelectorAll("[data-reset]").forEach(b=>b.onclick=()=>{if(confirm("فك ربط الكود بالجهاز؟ المشترك هيقدر يفعّله على جهاز جديد."))act(()=>updateDoc(doc(db,"codes",b.dataset.reset),{deviceUid:null,activatedAt:null}));});
+box.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{const c=find(b.dataset.toggle);act(()=>updateDoc(doc(db,"codes",c.id),{active:c.active===false}));});
+box.querySelectorAll("[data-wa]").forEach(b=>b.onclick=()=>{const c=find(b.dataset.wa);window.open(`https://wa.me/${waPhone(c.phone)}?text=${encodeURIComponent(codeMessage(c))}`,"_blank");});
+box.querySelectorAll("[data-delcode]").forEach(b=>b.onclick=()=>{if(confirm(`حذف الكود ${b.dataset.delcode} نهائياً؟`))act(()=>deleteDoc(doc(db,"codes",b.dataset.delcode)));});
+}
+async function createCode(){
+const name=$("newCodeName").value.trim(),phone=$("newCodePhone").value.trim(),months=Number($("newCodeLen").value);
+if(!name){$("codesNotice").innerHTML=`<div class="notice error">اكتب اسم المشترك.</div>`;return;}
+const id=newCode(),expiresAt=addMonths(Date.now(),months);
+try{
+await setDoc(doc(db,"codes",id),{name,phone,plan:"pro",expiresAt:Timestamp.fromMillis(expiresAt),deviceUid:null,activatedAt:null,active:true,createdAt:serverTimestamp()});
+$("newCodeName").value="";$("newCodePhone").value="";
+$("codesNotice").innerHTML=`<div class="notice ok">تم إنشاء الكود <b>${id}</b> — دوس "واتساب" جنبه عشان تبعته.</div>`;
+await loadCodes();
+}catch(e){console.error(e);$("codesNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
+}
+async function saveFeatures(){
+const f={};document.querySelectorAll("[data-feature]").forEach(s=>f[s.dataset.feature]=s.value);
+const tpl=parseLines($("templatesInput").value).map(line=>{const[name,nums]=line.split("|").map(s=>s.trim());return{name,numbers:String(nums||"").split(/[\s,;]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0)};}).filter(t=>t.name&&t.numbers.length);
+try{
+await setDoc(doc(db,"settings","main"),{features:f,templates:tpl,updatedAt:serverTimestamp()},{merge:true});
+FEATURES={...FEATURES,...f};TEMPLATES=tpl;await refreshPro();
+$("featuresNotice").innerHTML=`<div class="notice ok">اتحفظ. التغيير وصل لكل المستخدمين.</div>`;
+}catch(e){$("featuresNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
+}
+function featuresCardHtml(){
+const modes=k=>k==="subscriptions"?[["off","مقفول"],["on","شغال"]]:[["off","مقفول"],["all","للكل مجاناً"],["pro","للمشتركين بس"]];
+const rows=[["subscriptions","نظام الاشتراكات (زرار Pro + تفعيل الأكواد)"],["templates","البروتوكولات الجاهزة"],["dosage","Sets / Reps / Hold لكل تمرين"],["branding","بيانات الأخصائي والعيادة على الـ PDF والواتساب"]];
+return`<div class="settings-card"><h3>المزايا (Features)</h3><p>لو كله "مقفول" الموقع بيفضل زي ما هو بالظبط. "للمشتركين بس" محتاجة نظام الاشتراكات يبقى شغال. انت كأدمن بتشوف كل المزايا اللي مش مقفولة.</p>
+${rows.map(([k,l])=>`<div class="feature-row"><span>${l}</span><select data-feature="${k}">${modes(k).map(([v,t])=>`<option value="${v}" ${FEATURES[k]===v?"selected":""}>${t}</option>`).join("")}</select></div>`).join("")}
+<div class="field" style="margin-top:14px"><label>البروتوكولات — سطر لكل بروتوكول: الاسم | أرقام التمارين</label><textarea id="templatesInput" class="settings-textarea" placeholder="Frozen shoulder | 1, 4, 7&#10;Low back pain | 3, 12, 15">${escapeHtml(TEMPLATES.map(t=>`${t.name} | ${t.numbers.join(", ")}`).join("\n"))}</textarea></div>
+<div style="margin-top:12px"><button class="btn btn-primary" id="saveFeaturesBtn">حفظ المزايا</button></div><div id="featuresNotice"></div></div>`;
+}
+function codesCardHtml(){
+return`<div class="settings-card"><h3>المشتركين (أكواد Pro)</h3><p>التجديد بيمد صلاحية نفس الكود — مش محتاج تبعت كود جديد. "فك الجهاز" لو المشترك غيّر موبايله.</p>
+<div class="form-grid"><div class="field"><label>اسم المشترك</label><input id="newCodeName"></div><div class="field"><label>رقم الواتساب</label><input id="newCodePhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
+<div class="field"><label>المدة</label><select id="newCodeLen"><option value="1">شهر</option><option value="3">3 شهور</option><option value="6">6 شهور</option><option value="12">سنة</option></select></div>
+<div class="field" style="justify-content:end"><button class="btn btn-primary" id="createCodeBtn">+ إنشاء كود</button></div></div>
+<div id="codesNotice"></div><div id="codesBox" style="display:grid;gap:8px;margin-top:14px"></div></div>`;
 }
 function switchTab(tabId){
 document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tabId));
@@ -412,6 +658,8 @@ adImageLinks=Array.isArray(d.adImages)?d.adImages.map(x=>typeof x==="string"?{im
 headerIntervalSeconds=Math.max(2,Number(d.headerIntervalSeconds)||4);
 adIntervalSeconds=Math.max(2,Number(d.adIntervalSeconds)||5);
 if(Array.isArray(d.regions)&&d.regions.length)REGIONS=d.regions.map(r=>String(r).trim()).filter(Boolean);
+if(d.features&&typeof d.features==="object")FEATURES={...FEATURES,...d.features};
+TEMPLATES=Array.isArray(d.templates)?d.templates.filter(t=>t&&t.name&&Array.isArray(t.numbers)):[];
 }
 }catch(e){console.warn("Settings load failed:",e);}
 renderHero();renderAd();
@@ -473,10 +721,14 @@ $("adminContent").innerHTML=`<div class="admin-panel">
 <div class="field full"><label>Body regions (categories)</label><textarea id="regionsList" class="settings-textarea" placeholder="One region per line">${escapeHtml(settingLines(REGIONS))}</textarea><small style="display:block;margin-top:6px;color:#667085">قسم واحد في كل سطر. أضف قسم جديد بإضافة سطر، أو احذف قسم بمسح سطره — يفضل ما تحذفش قسم لسه فيه تمارين مربوطة بيه.</small></div>
 <div><button class="btn btn-primary" id="saveSiteSettingsBtn">Save appearance</button></div><div id="siteSettingsNotice"></div>
 </div></div>
+${featuresCardHtml()}
+${codesCardHtml()}
 <div class="admin-list">${list.map(e=>`<div class="admin-row"><div class="meta"><div class="admin-number">#${exerciseNumber(e)}</div><img src="${escapeHtml(imageList(e)[0]||PLACEHOLDER_IMG)}" alt=""><div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(exerciseRegions(e).join(", "))}</div></div></div><div class="admin-row-actions"><button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button><button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button></div></div>`).join("")||`<div class="empty">No Firestore exercises yet. Add your first one.</div>`}</div></div>`;
 if($("headerIntervalSeconds"))$("headerIntervalSeconds").value=headerIntervalSeconds;if($("adIntervalSeconds"))$("adIntervalSeconds").value=adIntervalSeconds;
 $("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");};
 $("saveSiteSettingsBtn").onclick=saveSiteSettings;
+$("saveFeaturesBtn").onclick=saveFeatures;$("createCodeBtn").onclick=createCode;
+renderCodes();loadCodes();
 document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openExerciseModal(b.dataset.edit));document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteExercise(b.dataset.delete));
 }
 async function nextExerciseNumber(){
@@ -638,14 +890,18 @@ let text="";
 if(patient)text+=`برنامج التمارين الي ${patient}\n\n`;
 text+=`لمشاهدة الصور او الفيديوهات مباشرة، افتح اللينك ده:\n${directLink}\n\n`;
 list.forEach((e,i)=>{
-text+=`${i+1} - ${e.name}\n${e.description}\n\n`;
+const dose=doseText(e.id,true);
+text+=`${i+1} - ${e.name}\n${dose?`الجرعة: ${dose}\n`:""}${e.description}\n\n`;
 });
+if(featureOn("branding")){const b=getBrand(),sig=[b.name,b.clinic,b.phone].filter(Boolean).join("\n");if(sig)text+=`—\n${sig}`;}
 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
 }
 async function makePdf(){
 const patient=$("patientName").value.trim(),list=sortedExercises(exercises.filter(e=>selectedIds.has(e.id)));if(!list.length){alert("Select at least one exercise.");return;}
 const clone=$("pdfArea").cloneNode(true);clone.querySelectorAll(".no-print").forEach(x=>x.remove());
 const title=document.createElement("div");title.innerHTML=`<h1 style="font-family:Arial;margin:0 0 8px">Home Exercise Program</h1><p style="font-family:Arial;color:#555">${patient?`Patient: ${escapeHtml(patient)}`:""}</p>`;clone.prepend(title);clone.style.padding="20px";
+if(featureOn("branding")){const b=getBrand();if(b.name||b.clinic||b.phone||b.logo){const h=document.createElement("div");h.style.cssText="display:flex;align-items:center;gap:14px;border-bottom:2px solid #1e3a8a;padding-bottom:12px;margin-bottom:14px;font-family:Arial";h.innerHTML=`${b.logo?`<img src="${escapeHtml(driveToImageUrl(b.logo))}" crossorigin="anonymous" style="height:60px;max-width:140px;object-fit:contain">`:""}<div><div style="font-size:18px;font-weight:bold">${escapeHtml(b.name||"")}</div><div style="color:#555">${escapeHtml([b.clinic,b.phone].filter(Boolean).join(" • "))}</div></div>`;clone.prepend(h);}}
+clone.querySelectorAll("[data-item-id]").forEach(el=>{const t=doseText(el.dataset.itemId,false);if(t){const s=document.createElement("div");s.style.cssText="font-family:Arial;font-weight:bold;color:#1e3a8a;margin-top:4px";s.textContent=t;el.querySelector("div")?.appendChild(s);}});
 const temp=document.createElement("div");temp.style.background="white";temp.appendChild(clone);document.body.appendChild(temp);
 await html2pdf().set({margin:10,filename:`home-exercise-program${patient?"-"+patient.replace(/\s+/g,"-"):""}.pdf`,image:{type:"jpeg",quality:.92},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}}).from(temp).save();temp.remove();
 }
@@ -660,6 +916,10 @@ const u=new URL(window.location.href);
 u.search="";u.hash="";
 window.location.href=u.href;
 };
+$("proOpenBtn").onclick=openPro;$("footerProBtn").onclick=openPro;$("bannerProBtn").onclick=openPro;$("proActivateBtn").onclick=activatePro;
+$("proCodeInput").addEventListener("keydown",e=>{if(e.key==="Enter")activatePro();});
+$("brandToggleBtn").onclick=()=>{const b=getBrand();$("brandName").value=b.name||"";$("brandClinic").value=b.clinic||"";$("brandPhone").value=b.phone||"";$("brandLogo").value=b.logo||"";$("brandForm").classList.toggle("hidden");};
+$("brandSaveBtn").onclick=()=>{lsSet(BRAND_KEY,JSON.stringify({name:$("brandName").value.trim(),clinic:$("brandClinic").value.trim(),phone:$("brandPhone").value.trim(),logo:$("brandLogo").value.trim()}));$("brandForm").classList.add("hidden");renderBrandSummary();};
 $("exerciseForm").addEventListener("submit",saveExercise);$("addImageBtn").onclick=()=>addImageInput();document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
 
 let appRevealed=false;
@@ -671,15 +931,16 @@ const loader=$("bootLoader");if(loader)loader.remove();
 }
 onAuthStateChanged(auth,async user=>{
 currentUser=user;
-if(!user){isAdmin=false;revealApp();return;}
-isAdmin=await checkAdmin(user);
+if(!user){isAdmin=false;applyFeatures();revealApp();return;}
+isAdmin=user.isAnonymous?false:await checkAdmin(user);
 if(isAdmin && !directExerciseNumbers){
 $("loginModal").classList.add("hidden");
 switchTab("adminTab");
 renderAdmin();
-}else if(!isAdmin){
+}else if(!isAdmin&&!user.isAnonymous){
 console.warn("Signed-in user is not confirmed as admin:",adminCheckError);
 }
+applyFeatures();
 revealApp();
 });
 setTimeout(revealApp,3000);
@@ -689,7 +950,7 @@ if(directExerciseNumbers){
 document.body.classList.add("direct-mode");
 switchTab("exerciseTab");
 }
-loadSettings().then(()=>loadExercises());homeexTrackVisit();
+loadSettings().then(()=>{loadExercises();refreshPro();});homeexTrackVisit();
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(e=>console.warn("Service worker registration failed",e)));}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();});
@@ -735,6 +996,8 @@ async function homeexTrackVisit(){
   <a href="mailto:ahmed4nassef@gmail.com">ahmed4nassef@gmail.com</a>
   <span style="margin:0 7px">•</span>
   <span>Visits: <b id="visitCount">—</b></span>
+  <span id="footerProSep" class="hidden" style="margin:0 7px">•</span>
+  <button id="footerProBtn" class="hidden" type="button" style="border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer">Pro</button>
   <span style="margin:0 7px">•</span>
   <button id="footerAdminBtn" type="button" style="border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer">Admin</button>
 </footer></body>
