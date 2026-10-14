@@ -105,6 +105,12 @@ body.has-viewas{padding-bottom:70px}
 .code-meta{font-size:12px;color:#667085;line-height:1.6}
 .code-actions{display:flex;gap:6px;flex-wrap:wrap}.code-actions .btn{padding:7px 10px;font-size:12px}
 .pill{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px}
+.pill.warn{background:#fef3c7;color:#92400e}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.stat{border:1px solid var(--border);background:#fff;border-radius:12px;padding:10px;text-align:right;display:flex;flex-direction:column;gap:2px}
+.stat b{font-size:22px}.stat span{font-size:12px;color:#667085}
+.stat.ok b{color:#047857}.stat.warn b{color:#b45309}.stat.bad b{color:#b91c1c}
+.stat.active{outline:2px solid #2563eb;background:#eff6ff}
 .pill.ok{background:#dcfce7;color:#166534}.pill.bad{background:#fee2e2;color:#991b1b}.pill.wait{background:#e0e7ff;color:#3730a3}
 .feature-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f2f4f7;flex-wrap:wrap}
 .feature-row select{border:1px solid #d0d5dd;border-radius:9px;padding:8px}
@@ -315,7 +321,7 @@ function homeexStartHeaderSlider(urls,seconds){
 
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut,signInAnonymously} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,getDoc,setDoc,serverTimestamp,query,orderBy,Timestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc,getDoc,setDoc,serverTimestamp,query,orderBy,Timestamp,increment} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyDIDA8-KmZ9Pi5JHYjb8E2kgFQNF1_Zy70",
@@ -343,7 +349,7 @@ let patientMediaLink=window.location.href.split("#")[0];
 let directExerciseNumbers=null,heroImageLinks=[],adImageLinks=[],heroTimer=null,adTimer=null,headerIntervalSeconds=4,adIntervalSeconds=5;
 const galleryIndex=new Map();
 // Feature flags (settings/main.features). "off" = hidden for everyone, "all" = everyone, "pro" = subscribers + admin.
-let FEATURES={subscriptions:"off",templates:"off",dosage:"off",branding:"off",protoAd:"on"};
+let FEATURES={subscriptions:"off",templates:"off",dosage:"off",branding:"off",exAd:"on",protoAd:"on"};
 let TEMPLATES=[],proActive=false,proInfo=null,codesCache=null;
 // Sales page shown inside the Pro window (settings/main.proPage) — editable from Admin.
 let PRO_PAGE={
@@ -656,14 +662,37 @@ try{const snap=await getDocs(collection(db,"codes"));codesCache=snap.docs.map(d=
 catch(e){console.error(e);codesCache={error:e.message};}
 renderCodes();
 }
+let codesFilter="all",codesQuery="";
+function codeStatus(c){
+if(c.active===false)return"stopped";
+if(c.expiresAt<=Date.now())return"expired";
+if(!c.deviceUid)return"pending";
+return c.expiresAt-Date.now()<=7*864e5?"expiring":"active";
+}
 function renderCodes(){
 const box=$("codesBox");if(!box)return;
 if(!codesCache){box.innerHTML=`<div class="code-meta">Loading…</div>`;return;}
 if(codesCache.error){box.innerHTML=`<div class="notice error">تعذر تحميل الأكواد: ${escapeHtml(codesCache.error)}<br>غالباً قواعد Firestore لسه محتاجة تتحدث (collection: codes).</div>`;return;}
-if(!codesCache.length){box.innerHTML=`<div class="empty">لسه مفيش مشتركين.</div>`;return;}
-box.innerHTML=codesCache.map(c=>{
+if(!codesCache.length){box.innerHTML=`<div class="empty">لسه مفيش مشتركين.</div>`;$("codesStats").innerHTML="";return;}
+const counts={all:codesCache.length,active:0,expiring:0,pending:0,expired:0,stopped:0};
+codesCache.forEach(c=>{const st=codeStatus(c);counts[st]++;if(st==="expiring")counts.active++;});
+const months=codesCache.reduce((a,c)=>a+(Number(c.paidMonths)||0),0);
+const tiles=[["all","كل المشتركين",counts.all,""],["active","شغالين دلوقتي",counts.active,"ok"],["expiring","بيخلصوا خلال 7 أيام",counts.expiring,"warn"],["pending","لسه مفعّلوش",counts.pending,""],["expired","منتهيين",counts.expired,"bad"],["stopped","موقوفين",counts.stopped,"bad"]];
+$("codesStats").innerHTML=`<div class="stat-grid">${tiles.map(([k,l,n,c])=>`<button class="stat ${c} ${codesFilter===k?"active":""}" data-cfilter="${k}"><b>${n}</b><span>${l}</span></button>`).join("")}</div>
+<div class="code-meta" style="margin:8px 0 0">إجمالي الشهور المدفوعة: <b>${months}</b> شهر • التجديدات: <b>${codesCache.reduce((a,c)=>a+(Number(c.renewals)||0),0)}</b></div>
+<input id="codesSearch" placeholder="🔎 دوّر بالاسم أو الرقم أو الكود" value="${escapeHtml(codesQuery)}" style="width:100%;margin-top:10px;border:1px solid #d0d5dd;border-radius:10px;padding:10px">`;
+document.querySelectorAll("[data-cfilter]").forEach(b=>b.onclick=()=>{codesFilter=b.dataset.cfilter;renderCodes();});
+$("codesSearch").oninput=e=>{codesQuery=e.target.value;const pos=e.target.selectionStart;renderCodes();const i=$("codesSearch");i.focus();i.setSelectionRange(pos,pos);};
+const q=codesQuery.trim().toLowerCase();
+const list=codesCache.filter(c=>{const st=codeStatus(c);
+if(codesFilter==="active"&&st!=="active"&&st!=="expiring")return false;
+if(codesFilter!=="all"&&codesFilter!=="active"&&st!==codesFilter)return false;
+return!q||[c.id,c.name,c.phone].some(v=>String(v||"").toLowerCase().includes(q));});
+if(!list.length){box.innerHTML=`<div class="empty">مفيش نتايج.</div>`;return;}
+box.innerHTML=list.map(c=>{
 const expired=c.expiresAt<=Date.now(),days=Math.ceil((c.expiresAt-Date.now())/864e5);
-const pill=c.active===false?`<span class="pill bad">موقوف</span>`:expired?`<span class="pill bad">منتهي</span>`:!c.deviceUid?`<span class="pill wait">لم يُفعّل بعد</span>`:`<span class="pill ok">شغال • ${days} يوم</span>`;
+const st=codeStatus(c);
+const pill=st==="stopped"?`<span class="pill bad">موقوف</span>`:st==="expired"?`<span class="pill bad">منتهي</span>`:st==="pending"?`<span class="pill wait">لم يُفعّل بعد • ${days} يوم</span>`:st==="expiring"?`<span class="pill warn">بيخلص بعد ${days} يوم</span>`:`<span class="pill ok">شغال • ${days} يوم</span>`;
 return`<div class="code-row"><div><code>${escapeHtml(c.id)}</code> ${pill}<div class="code-meta">${escapeHtml(c.name||"—")}${c.phone?" • "+escapeHtml(c.phone):""} • ينتهي ${fmtDate(c.expiresAt)}${c.deviceUid?" • مربوط بجهاز":""}</div></div>
 <div class="code-actions">
 <select data-renew-len="${escapeHtml(c.id)}" class="btn btn-outline"><option value="1">شهر</option><option value="3">3 شهور</option><option value="6">6 شهور</option><option value="12">سنة</option></select>
@@ -677,7 +706,7 @@ const find=id=>codesCache.find(c=>c.id===id);
 const act=async(fn)=>{try{await fn();await loadCodes();}catch(e){alert(e.message);}};
 box.querySelectorAll("[data-renew]").forEach(b=>b.onclick=()=>{const c=find(b.dataset.renew),m=Number(box.querySelector(`[data-renew-len="${CSS.escape(c.id)}"]`).value);
 const next=addMonths(Math.max(Date.now(),c.expiresAt),m);
-if(confirm(`تجديد ${c.id} لحد ${fmtDate(next)}؟`))act(()=>updateDoc(doc(db,"codes",c.id),{expiresAt:Timestamp.fromMillis(next),active:true,renewedAt:serverTimestamp()}));});
+if(confirm(`تجديد ${c.id} لحد ${fmtDate(next)}؟`))act(()=>updateDoc(doc(db,"codes",c.id),{expiresAt:Timestamp.fromMillis(next),active:true,renewedAt:serverTimestamp(),renewals:increment(1),paidMonths:increment(m)}));});
 box.querySelectorAll("[data-reset]").forEach(b=>b.onclick=()=>{if(confirm("فك ربط الكود بالجهاز؟ المشترك هيقدر يفعّله على جهاز جديد."))act(()=>updateDoc(doc(db,"codes",b.dataset.reset),{deviceUid:null,activatedAt:null}));});
 box.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{const c=find(b.dataset.toggle);act(()=>updateDoc(doc(db,"codes",c.id),{active:c.active===false}));});
 box.querySelectorAll("[data-wa]").forEach(b=>b.onclick=()=>{const c=find(b.dataset.wa);window.open(`https://wa.me/${waPhone(c.phone)}?text=${encodeURIComponent(codeMessage(c))}`,"_blank");});
@@ -688,7 +717,7 @@ const name=$("newCodeName").value.trim(),phone=$("newCodePhone").value.trim(),mo
 if(!name){$("codesNotice").innerHTML=`<div class="notice error">اكتب اسم المشترك.</div>`;return;}
 const id=newCode(),expiresAt=addMonths(Date.now(),months);
 try{
-await setDoc(doc(db,"codes",id),{name,phone,plan:"pro",expiresAt:Timestamp.fromMillis(expiresAt),deviceUid:null,activatedAt:null,active:true,createdAt:serverTimestamp()});
+await setDoc(doc(db,"codes",id),{name,phone,plan:"pro",paidMonths:months,renewals:0,expiresAt:Timestamp.fromMillis(expiresAt),deviceUid:null,activatedAt:null,active:true,createdAt:serverTimestamp()});
 $("newCodeName").value="";$("newCodePhone").value="";
 $("codesNotice").innerHTML=`<div class="notice ok">تم إنشاء الكود <b>${id}</b> — دوس "واتساب" جنبه عشان تبعته.</div>`;
 await loadCodes();
@@ -704,8 +733,8 @@ $("featuresNotice").innerHTML=`<div class="notice ok">اتحفظ. التغيير
 }catch(e){$("featuresNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
 }
 function featuresCardHtml(){
-const modes=k=>k==="subscriptions"||k==="protoAd"?[["off","مقفول"],["on","شغال"]]:[["off","مقفول"],["all","للكل مجاناً"],["pro","للمشتركين بس"]];
-const rows=[["subscriptions","نظام الاشتراكات (زرار Pro + تفعيل الأكواد)"],["templates","البروتوكولات الجاهزة"],["dosage","Sets / Reps / Hold لكل تمرين"],["branding","بيانات الأخصائي والعيادة على الـ PDF والواتساب"],["protoAd","صورة الإعلان في تاب البروتوكولات"]];
+const modes=k=>["subscriptions","exAd","protoAd"].includes(k)?[["off","مقفول"],["on","شغال"]]:[["off","مقفول"],["all","للكل مجاناً"],["pro","للمشتركين بس"]];
+const rows=[["subscriptions","نظام الاشتراكات (زرار Pro + تفعيل الأكواد)"],["templates","البروتوكولات الجاهزة"],["dosage","Sets / Reps / Hold لكل تمرين"],["branding","بيانات الأخصائي والعيادة على الـ PDF والواتساب"],["exAd","صورة الإعلان في صفحة التمارين"],["protoAd","صورة الإعلان في تاب البروتوكولات"]];
 return`<div class="settings-card"><h3>المزايا (Features)</h3><p>لو كله "مقفول" الموقع بيفضل زي ما هو بالظبط. "للمشتركين بس" محتاجة نظام الاشتراكات يبقى شغال. انت كأدمن بتشوف كل المزايا اللي مش مقفولة.</p>
 ${rows.map(([k,l])=>`<div class="feature-row"><span>${l}</span><select data-feature="${k}">${modes(k).map(([v,t])=>`<option value="${v}" ${FEATURES[k]===v?"selected":""}>${t}</option>`).join("")}</select></div>`).join("")}
 <div class="field" style="margin-top:14px"><label>البروتوكولات (${TEMPLATES.length}) — سطر لكل بروتوكول</label><textarea id="templatesInput" class="settings-textarea" style="min-height:260px;font-family:monospace;font-size:12px" dir="ltr">${escapeHtml(TEMPLATES.map(templateToLine).join("\n"))}</textarea><small style="display:block;margin-top:6px;color:#667085;line-height:1.7">الشكل: <code>الاسم | المنطقة | الوصف | التمارين</code><br>التمارين: رقم التمرين وبعده الجرعة. مثلاً <code>15:3x10h5/2</code> معناها تمرين 15، 3 مجموعات × 10، ثبات 5 ثواني، مرتين في اليوم. و<code>13:x3h30</code> معناها 3 مرات ثبات 30 ثانية. و<code>47</code> لوحده معناها من غير جرعة.<br>لو مسحت كل السطور وحفظت، البروتوكولات الجاهزة الأصلية بترجع.</small></div>
@@ -736,7 +765,7 @@ return`<div class="settings-card"><h3>المشتركين (أكواد Pro)</h3><p
 <div class="form-grid"><div class="field"><label>اسم المشترك</label><input id="newCodeName"></div><div class="field"><label>رقم الواتساب</label><input id="newCodePhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
 <div class="field"><label>المدة</label><select id="newCodeLen"><option value="1">شهر</option><option value="3">3 شهور</option><option value="6">6 شهور</option><option value="12">سنة</option></select></div>
 <div class="field" style="justify-content:end"><button class="btn btn-primary" id="createCodeBtn">+ إنشاء كود</button></div></div>
-<div id="codesNotice"></div><div id="codesBox" style="display:grid;gap:8px;margin-top:14px"></div></div>`;
+<div id="codesNotice"></div><div id="codesStats" style="margin-top:16px"></div><div id="codesBox" style="display:grid;gap:8px;margin-top:14px"></div></div>`;
 }
 function switchTab(tabId){
 document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tabId));
@@ -880,8 +909,9 @@ if(heroTimer){clearInterval(heroTimer);heroTimer=null;}
 if(imgs.length>1){let i=0;heroTimer=setInterval(()=>{const slides=[...box.querySelectorAll(".hero-slide")];if(!slides.length)return;slides[i].classList.remove("active");i=(i+1)%slides.length;slides[i].classList.add("active");},Math.max(2,Number(headerIntervalSeconds)||4)*1000);}
 }
 function renderAd(){
-const boxes=[$("adSlot"),FEATURES.protoAd!=="off"?$("adSlotProto"):null].filter(Boolean);
-const off=$("adSlotProto");if(off&&!boxes.includes(off)){off.style.display="none";off.innerHTML="";}
+const boxes=[FEATURES.exAd!=="off"?$("adSlot"):null,FEATURES.protoAd!=="off"?$("adSlotProto"):null].filter(Boolean);
+[$("adSlot"),$("adSlotProto")].forEach(b=>{if(b&&!boxes.includes(b)){b.style.display="none";b.innerHTML="";}});
+if(!boxes.length){if(adTimer){clearInterval(adTimer);adTimer=null;}return;}
 const imgs=(adImageLinks||[]).map(x=>({src:driveToImageUrl(x.img),href:x.link?driveToImageUrl(x.link):driveToImageUrl(x.img)})).filter(x=>x.src);
 if(!imgs.length){boxes.forEach(b=>{b.style.display="none";b.innerHTML="";});if(adTimer){clearInterval(adTimer);adTimer=null;}return;}
 boxes.forEach(b=>b.style.display="block");let i=0;
