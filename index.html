@@ -98,6 +98,10 @@ body.has-viewas{padding-bottom:70px}
 .pro-banner{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:11px 13px;font-size:13px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .brand-box{border:1px solid var(--border);border-radius:13px;padding:12px;margin:14px 0}
 .brand-box .form-grid{margin-top:10px}
+.brand-head{display:flex;align-items:center;gap:12px}
+.brand-logo-mini{width:44px;height:44px;border-radius:10px;background:#f2f4f7 center/contain no-repeat;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:20px}
+.logo-pick{display:flex;gap:12px;align-items:center}
+.logo-preview{width:84px;height:84px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc center/contain no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;color:#98a2b3;flex:0 0 auto}
 .pro-status{border-radius:12px;padding:14px;margin:14px 0;font-size:14px;line-height:1.7}
 .pro-status.ok{background:#ecfdf3;color:#047857}.pro-status.bad{background:#fef2f2;color:#b91c1c}
 .code-row{display:flex;justify-content:space-between;gap:12px;border:1px solid var(--border);border-radius:12px;padding:11px;flex-wrap:wrap;align-items:center}
@@ -210,17 +214,20 @@ body.direct-mode #protocolsTabBtn,body.direct-mode .pro-btn,body.direct-mode #fo
 <div class="no-print">
 <div id="proBanner" class="pro-banner hidden"><span dir="rtl">🔒 مع <b>Pro</b>: Sets و Reps لكل تمرين، وبيانات عيادتك على الـ PDF، وبروتوكولات جاهزة.</span><button class="btn btn-dark" type="button" id="bannerProBtn">اعرف أكتر</button></div>
 <div class="field"><label for="patientName">Patient name (optional)</label><input id="patientName" placeholder="e.g. Ahmed Mohamed"></div>
-<div id="brandBox" class="brand-box hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong>Your clinic details</strong><button class="btn btn-outline" type="button" id="brandToggleBtn">Edit</button></div>
-<div id="brandSummary" class="code-meta" style="margin-top:6px"></div>
+<div id="brandBox" class="brand-box hidden" dir="rtl">
+<div class="brand-head"><div class="brand-logo-mini" id="brandLogoMini"></div><div style="flex:1"><strong>بيانات عيادتك</strong><div id="brandSummary" class="code-meta"></div></div><button class="btn btn-outline" type="button" id="brandToggleBtn">تعديل</button></div>
 <div id="brandForm" class="hidden">
 <div class="form-grid">
-<div class="field"><label>Therapist name</label><input id="brandName" placeholder="Dr. ..."></div>
-<div class="field"><label>Clinic name</label><input id="brandClinic"></div>
-<div class="field"><label>Phone</label><input id="brandPhone" inputmode="tel"></div>
-<div class="field"><label>Logo image link (optional)</label><input id="brandLogo" placeholder="Google Drive or image URL"></div>
+<div class="field"><label>اسم الأخصائي</label><input id="brandName" placeholder="د. ..."></div>
+<div class="field"><label>اسم العيادة</label><input id="brandClinic" placeholder="مثلاً: مركز الشفاء للعلاج الطبيعي"></div>
+<div class="field"><label>رقم التليفون</label><input id="brandPhone" inputmode="tel" dir="ltr" placeholder="01xxxxxxxxx"></div>
+<div class="field"><label>اللوجو</label>
+<div class="logo-pick"><div class="logo-preview" id="brandLogoPreview">لا يوجد</div>
+<div style="display:flex;flex-direction:column;gap:6px"><label class="btn btn-outline" style="text-align:center;cursor:pointer">📷 ارفع اللوجو<input type="file" id="brandLogoFile" accept="image/*" hidden></label><button type="button" class="btn btn-danger hidden" id="brandLogoRemove">شيل اللوجو</button></div></div>
+<small style="color:#667085">صورة من موبايلك أو جهازك. بنصغّرها تلقائياً.</small></div>
 </div>
-<div class="form-actions"><button class="btn btn-primary" type="button" id="brandSaveBtn">Save on this device</button></div>
+<div class="form-actions"><button class="btn btn-primary" type="button" id="brandSaveBtn">حفظ</button></div>
+<div class="code-meta">البيانات بتتحفظ على الجهاز ده، وبتظهر أوتوماتيك على كل PDF ورسالة واتساب.</div>
 </div>
 </div>
 </div>
@@ -472,7 +479,8 @@ renderBrandSummary();renderTemplates();renderSend();
 }
 function renderBrandSummary(){
 const b=getBrand();
-$("brandSummary").textContent=[b.name,b.clinic,b.phone].filter(Boolean).join(" • ")||"Add your name, clinic and phone. They will appear on the PDF and the WhatsApp message.";
+$("brandSummary").textContent=[b.name,b.clinic,b.phone].filter(Boolean).join(" • ")||"ضيف اسمك واسم العيادة ورقمك واللوجو، وهيظهروا على الـ PDF والواتساب.";
+const mini=$("brandLogoMini");mini.style.backgroundImage=b.logo?`url("${driveToImageUrl(b.logo).replace(/"/g,'%22')}")`:"";mini.textContent=b.logo?"":"🏥";
 }
 function renderViewAs(){
 let bar=$("viewAsBar");
@@ -1132,8 +1140,17 @@ window.location.href=u.href;
 };
 $("proOpenBtn").onclick=openPro;$("homeProBtn").onclick=openPro;$("footerProBtn").onclick=openPro;$("bannerProBtn").onclick=openPro;$("proActivateBtn").onclick=activatePro;
 $("proCodeInput").addEventListener("keydown",e=>{if(e.key==="Enter")activatePro();});
-$("brandToggleBtn").onclick=()=>{const b=getBrand();$("brandName").value=b.name||"";$("brandClinic").value=b.clinic||"";$("brandPhone").value=b.phone||"";$("brandLogo").value=b.logo||"";$("brandForm").classList.toggle("hidden");};
-$("brandSaveBtn").onclick=()=>{lsSet(BRAND_KEY,JSON.stringify({name:$("brandName").value.trim(),clinic:$("brandClinic").value.trim(),phone:$("brandPhone").value.trim(),logo:$("brandLogo").value.trim()}));$("brandForm").classList.add("hidden");renderBrandSummary();};
+let brandLogoDraft="";
+function showLogoDraft(){const pv=$("brandLogoPreview");pv.style.backgroundImage=brandLogoDraft?`url("${driveToImageUrl(brandLogoDraft).replace(/"/g,'%22')}")`:"";pv.textContent=brandLogoDraft?"":"لا يوجد";$("brandLogoRemove").classList.toggle("hidden",!brandLogoDraft);}
+$("brandToggleBtn").onclick=()=>{const b=getBrand();$("brandName").value=b.name||"";$("brandClinic").value=b.clinic||"";$("brandPhone").value=b.phone||"";brandLogoDraft=b.logo||"";showLogoDraft();$("brandForm").classList.toggle("hidden");};
+$("brandLogoFile").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+const img=new Image(),url=URL.createObjectURL(f);
+img.onload=()=>{const max=320,k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);brandLogoDraft=c.toDataURL("image/png");showLogoDraft();};
+img.onerror=()=>{URL.revokeObjectURL(url);alert("مقدرناش نقرا الصورة دي. جرّب صورة تانية.");};img.src=url;};
+$("brandLogoRemove").onclick=()=>{brandLogoDraft="";showLogoDraft();};
+$("brandSaveBtn").onclick=()=>{const data={name:$("brandName").value.trim(),clinic:$("brandClinic").value.trim(),phone:$("brandPhone").value.trim(),logo:brandLogoDraft};
+try{localStorage.setItem(BRAND_KEY,JSON.stringify(data));}catch(e){alert("مقدرناش نحفظ. لو اللوجو كبير جرّب صورة أصغر.");return;}
+$("brandForm").classList.add("hidden");renderBrandSummary();toast("✓ اتحفظت بيانات العيادة");};
 $("exerciseForm").addEventListener("submit",saveExercise);$("addImageBtn").onclick=()=>addImageInput();document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
 
 let appRevealed=false;
