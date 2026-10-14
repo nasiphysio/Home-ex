@@ -107,6 +107,14 @@ body.direct-mode .direct-only{display:block}
 .pill.ok{background:#dcfce7;color:#166534}.pill.bad{background:#fee2e2;color:#991b1b}.pill.wait{background:#e0e7ff;color:#3730a3}
 .feature-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f2f4f7;flex-wrap:wrap}
 .feature-row select{border:1px solid #d0d5dd;border-radius:9px;padding:8px}
+.offer-sub{color:#667085;margin:4px 0 12px;font-size:14px}
+.offer-list{list-style:none;padding:0;margin:0 0 16px;display:grid;gap:7px}
+.offer-list li{font-size:14px;line-height:1.5}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.plan{border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+.plan.best{border:2px solid #f59e0b;background:#fffbeb}
+.plan b{display:block;font-size:15px}.plan .price{font-size:22px;font-weight:800;margin:6px 0;color:#1e3a8a}.plan small{color:#667085;font-size:12px}
+.plan .btn{width:100%;margin-top:10px}
 body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #footerProBtn{display:none!important}
 </style>
 </head>
@@ -156,7 +164,7 @@ body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #f
 <div class="section-head"><div><h2>Send prescription</h2><p>The WhatsApp message will contain exercise numbers, names and descriptions.</p></div></div>
 <div class="send-panel" id="pdfArea">
 <div class="no-print">
-<div id="proBanner" class="pro-banner hidden"><span>🔒 <b>Pro</b>: sets &amp; reps, your clinic details on the PDF, and ready-made protocols.</span><button class="btn btn-dark" type="button" id="bannerProBtn">Activate Pro</button></div>
+<div id="proBanner" class="pro-banner hidden"><span dir="rtl">🔒 مع <b>Pro</b>: Sets و Reps لكل تمرين، وبيانات عيادتك على الـ PDF، وبروتوكولات جاهزة.</span><button class="btn btn-dark" type="button" id="bannerProBtn">اعرف أكتر</button></div>
 <div class="field"><label for="patientName">Patient name (optional)</label><input id="patientName" placeholder="e.g. Ahmed Mohamed"></div>
 <div id="brandBox" class="brand-box hidden">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong>Your clinic details</strong><button class="btn btn-outline" type="button" id="brandToggleBtn">Edit</button></div>
@@ -197,13 +205,14 @@ body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #f
 </div>
 
 <div class="modal hidden" id="proModal">
-<div class="modal-card" style="width:min(480px,100%)">
+<div class="modal-card" style="width:min(620px,100%)">
 <div class="modal-head"><h3>⭐ HomeEx Pro</h3><button class="close" data-close="proModal">×</button></div>
 <div id="proStatus"></div>
-<div class="field"><label for="proCodeInput">Subscription code</label><input id="proCodeInput" placeholder="HX-XXXX-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase"></div>
-<div class="form-actions"><button class="btn btn-primary" id="proActivateBtn">Activate</button></div>
+<div id="proOffer"></div>
+<div class="field" style="margin-top:16px"><label for="proCodeInput">معاك كود؟ اكتبه هنا</label><input id="proCodeInput" placeholder="HX-XXXX-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase"></div>
+<div class="form-actions"><button class="btn btn-primary" id="proActivateBtn">تفعيل</button></div>
 <div id="proNotice"></div>
-<p class="code-meta" style="margin-top:14px">The code works on one device only. To get or renew a subscription, <a href="mailto:ahmed4nassef@gmail.com">contact us</a>.</p>
+<p class="code-meta" style="margin-top:14px" dir="rtl">الكود بيشتغل على جهاز واحد بس. التجديد بيتم على نفس الكود.</p>
 </div>
 </div>
 
@@ -298,6 +307,13 @@ const galleryIndex=new Map();
 // Feature flags (settings/main.features). "off" = hidden for everyone, "all" = everyone, "pro" = subscribers + admin.
 let FEATURES={subscriptions:"off",templates:"off",dosage:"off",branding:"off"};
 let TEMPLATES=[],proActive=false,proInfo=null,codesCache=null;
+// Sales page shown inside the Pro window (settings/main.proPage) — editable from Admin.
+let PRO_PAGE={
+headline:"وفّر وقتك واظهر باحترافية أكتر قدام كل مريض",
+features:["تحديد Sets و Reps و Hold وعدد المرات في اليوم لكل تمرين","اسمك واسم العيادة ورقمك واللوجو على كل PDF ورسالة واتساب","بروتوكولات جاهزة: ضغطة واحدة تختار البرنامج كله","كل المزايا الجديدة أول ما تنزل"],
+plans:[{name:"شهري",price:"150 جنيه",note:"في الشهر"},{name:"سنوي",price:"1500 جنيه",note:"شهرين ببلاش",best:true}],
+whatsapp:""
+};
 const dosage=new Map();
 const PRO_KEY="homeex_pro_code",BRAND_KEY="homeex_brand";
 const $=id=>document.getElementById(id);
@@ -422,13 +438,31 @@ $("exerciseSearch").value=[...nums].join(", ");searchNumbers=nums;
 renderExercises();renderSend();
 }
 function proStatusHtml(){
-if(proActive)return`<div class="pro-status ok">✅ Pro is active on this device.<br>Subscriber: <b>${escapeHtml(proInfo.name||"—")}</b><br>Valid until: <b>${fmtDate(proInfo.expiresAt)}</b> (${Math.max(0,Math.ceil((proInfo.expiresAt-Date.now())/864e5))} days left)</div>`;
+if(proActive)return`<div class="pro-status ok" dir="rtl">✅ اشتراك Pro شغال على الجهاز ده.<br>المشترك: <b>${escapeHtml(proInfo.name||"—")}</b><br>صالح حتى: <b>${fmtDate(proInfo.expiresAt)}</b> (فاضل ${Math.max(0,Math.ceil((proInfo.expiresAt-Date.now())/864e5))} يوم)</div>`;
 if(!proInfo)return"";
-const msg={missing:"This code was not found.",other:"This code is already activated on another device.",stopped:"This subscription has been stopped.",expired:`This subscription expired on ${fmtDate(proInfo.expiresAt)}. Contact us to renew — you keep the same code.`,error:"Could not check the subscription. Check your internet connection."}[proInfo.status];
-return msg?`<div class="pro-status bad">${escapeHtml(msg)}</div>`:"";
+const msg={missing:"الكود ده مش موجود.",other:"الكود ده متفعّل على جهاز تاني.",stopped:"الاشتراك ده متوقف.",expired:`الاشتراك خلص يوم ${fmtDate(proInfo.expiresAt)}. كلمنا عشان تجدد على نفس الكود.`,error:"مقدرناش نتأكد من الاشتراك. اتأكد من النت."}[proInfo.status];
+return msg?`<div class="pro-status bad" dir="rtl">${escapeHtml(msg)}</div>`:"";
+}
+function proWaLink(planName){
+const n=waPhone(PRO_PAGE.whatsapp);if(!n)return"";
+const renew=proInfo&&proInfo.status==="expired"?` (تجديد — الكود: ${lsGet(PRO_KEY)})`:"";
+return`https://wa.me/${n}?text=${encodeURIComponent(`السلام عليكم، عايز أشترك في HomeEx Pro${planName?` — باقة ${planName}`:""}${renew}`)}`;
+}
+function renderOffer(){
+const box=$("proOffer");
+if(proActive){box.innerHTML="";return;}
+const p=PRO_PAGE,plans=(p.plans||[]).filter(x=>x&&x.name);
+box.innerHTML=`<div dir="rtl">
+<h3 style="margin:6px 0 0;font-size:20px">${escapeHtml(p.headline||"")}</h3>
+<p class="offer-sub">مع اشتراك Pro هتاخد:</p>
+<ul class="offer-list">${(p.features||[]).filter(Boolean).map(f=>`<li>✅ ${escapeHtml(f)}</li>`).join("")}</ul>
+${plans.length?`<div class="plans">${plans.map(x=>{const l=proWaLink(x.name);return`<div class="plan ${x.best?"best":""}">${x.best?`<small style="color:#b45309;font-weight:800">⭐ الأوفر</small>`:""}<b>${escapeHtml(x.name)}</b><div class="price">${escapeHtml(x.price||"")}</div><small>${escapeHtml(x.note||"")}</small>${l?`<a class="btn btn-green" href="${escapeHtml(l)}" target="_blank" rel="noopener">اشترك</a>`:""}</div>`;}).join("")}</div>`:""}
+${!plans.length&&proWaLink("")?`<a class="btn btn-green" href="${escapeHtml(proWaLink(""))}" target="_blank" rel="noopener">اشترك على واتساب</a>`:""}
+<p class="code-meta">الدفع بـ InstaPay أو فودافون كاش، وبعدها بيوصلك كود التفعيل على الواتساب.</p>
+</div>`;
 }
 function openPro(){
-$("proStatus").innerHTML=proStatusHtml();$("proNotice").innerHTML="";
+$("proStatus").innerHTML=proStatusHtml();renderOffer();$("proNotice").innerHTML="";
 $("proCodeInput").value=lsGet(PRO_KEY)||"";
 $("proModal").classList.remove("hidden");
 }
@@ -461,23 +495,23 @@ applyFeatures();
 }
 async function activatePro(){
 const code=$("proCodeInput").value.trim().toUpperCase().replace(/\s+/g,"");
-const note=t=>$("proNotice").innerHTML=`<div class="notice error">${escapeHtml(t)}</div>`;
-if(!/^[A-Z0-9-]{6,40}$/.test(code)){note("Please enter a valid code.");return;}
-const btn=$("proActivateBtn");btn.disabled=true;btn.textContent="Checking...";
+const note=t=>$("proNotice").innerHTML=`<div class="notice error" dir="rtl">${escapeHtml(t)}</div>`;
+if(!/^[A-Z0-9-]{6,40}$/.test(code)){note("اكتب الكود صح.");return;}
+const btn=$("proActivateBtn");btn.disabled=true;btn.textContent="جاري التأكد...";
 try{
 const user=await ensureDeviceUser(),ref=doc(db,"codes",code),snap=await getDoc(ref);
-if(!snap.exists()){note("This code was not found.");return;}
+if(!snap.exists()){note("الكود ده مش موجود.");return;}
 const st=codeState(snap.data(),user.uid);
-if(st.status==="stopped"){note("This subscription has been stopped.");return;}
-if(st.status==="other"){note("This code is already activated on another device. Contact us if you changed your phone.");return;}
-if(st.status==="expired"){note(`This subscription expired on ${fmtDate(st.expiresAt)}. Contact us to renew.`);return;}
+if(st.status==="stopped"){note("الاشتراك ده متوقف.");return;}
+if(st.status==="other"){note("الكود ده متفعّل على جهاز تاني. لو غيّرت موبايلك كلمنا.");return;}
+if(st.status==="expired"){note(`الاشتراك خلص يوم ${fmtDate(st.expiresAt)}. كلمنا عشان تجدد.`);return;}
 if(!snap.data().deviceUid)await updateDoc(ref,{deviceUid:user.uid,activatedAt:serverTimestamp()});
 lsSet(PRO_KEY,code);
 await refreshPro();
-$("proStatus").innerHTML=proStatusHtml();
-$("proNotice").innerHTML=`<div class="notice ok">Pro activated. Enjoy!</div>`;
-}catch(e){console.error(e);note(e.code==="auth/admin-restricted-operation"?"Activation is not available yet. Please contact us.":(e.message||"Activation failed."));}
-finally{btn.disabled=false;btn.textContent="Activate";}
+$("proStatus").innerHTML=proStatusHtml();renderOffer();
+$("proNotice").innerHTML=`<div class="notice ok" dir="rtl">تم تفعيل Pro بنجاح 🎉</div>`;
+}catch(e){console.error(e);note(e.code==="auth/admin-restricted-operation"?"التفعيل مش متاح دلوقتي. كلمنا.":(e.message||"التفعيل فشل."));}
+finally{btn.disabled=false;btn.textContent="تفعيل";}
 }
 
 /* Admin: subscription codes */
@@ -551,6 +585,26 @@ return`<div class="settings-card"><h3>المزايا (Features)</h3><p>لو كل
 ${rows.map(([k,l])=>`<div class="feature-row"><span>${l}</span><select data-feature="${k}">${modes(k).map(([v,t])=>`<option value="${v}" ${FEATURES[k]===v?"selected":""}>${t}</option>`).join("")}</select></div>`).join("")}
 <div class="field" style="margin-top:14px"><label>البروتوكولات — سطر لكل بروتوكول: الاسم | أرقام التمارين</label><textarea id="templatesInput" class="settings-textarea" placeholder="Frozen shoulder | 1, 4, 7&#10;Low back pain | 3, 12, 15">${escapeHtml(TEMPLATES.map(t=>`${t.name} | ${t.numbers.join(", ")}`).join("\n"))}</textarea></div>
 <div style="margin-top:12px"><button class="btn btn-primary" id="saveFeaturesBtn">حفظ المزايا</button></div><div id="featuresNotice"></div></div>`;
+}
+function proPageCardHtml(){
+const p=PRO_PAGE;
+return`<div class="settings-card"><h3>صفحة عرض الاشتراك</h3><p>دي اللي بتظهر للناس لما يدوسوا ⭐ Pro. لينك تقدر تنشره على فيسبوك واليوتيوب: <code>${escapeHtml(window.location.href.split("#")[0].split("?")[0])}#pro</code></p>
+<div class="form-grid">
+<div class="field full"><label>العنوان</label><input id="ppHeadline" value="${escapeHtml(p.headline||"")}"></div>
+<div class="field full"><label>المزايا — سطر لكل ميزة</label><textarea id="ppFeatures" class="settings-textarea">${escapeHtml((p.features||[]).join("\n"))}</textarea></div>
+<div class="field full"><label>الباقات — سطر لكل باقة: الاسم | السعر | ملاحظة | * (لو عايزها "الأوفر")</label><textarea id="ppPlans" class="settings-textarea">${escapeHtml((p.plans||[]).map(x=>[x.name,x.price,x.note,x.best?"*":""].join(" | ").replace(/(\s\|\s)+$/,"")).join("\n"))}</textarea></div>
+<div class="field"><label>رقم الواتساب اللي هيوصلك عليه الطلبات</label><input id="ppWhatsapp" inputmode="tel" placeholder="01xxxxxxxxx" value="${escapeHtml(p.whatsapp||"")}"></div>
+</div>
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="saveProPageBtn">حفظ صفحة العرض</button><button class="btn btn-outline" id="previewProPageBtn">معاينة</button></div><div id="proPageNotice"></div></div>`;
+}
+async function saveProPage(){
+const plans=parseLines($("ppPlans").value).map(line=>{const[name,price,note,best]=line.split("|").map(s=>(s||"").trim());return{name,price:price||"",note:note||"",best:best==="*"};}).filter(x=>x.name);
+const proPage={headline:$("ppHeadline").value.trim(),features:parseLines($("ppFeatures").value),plans,whatsapp:$("ppWhatsapp").value.trim()};
+try{
+await setDoc(doc(db,"settings","main"),{proPage,updatedAt:serverTimestamp()},{merge:true});
+PRO_PAGE=proPage;
+$("proPageNotice").innerHTML=`<div class="notice ok">اتحفظ.</div>`;
+}catch(e){$("proPageNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
 }
 function codesCardHtml(){
 return`<div class="settings-card"><h3>المشتركين (أكواد Pro)</h3><p>التجديد بيمد صلاحية نفس الكود — مش محتاج تبعت كود جديد. "فك الجهاز" لو المشترك غيّر موبايله.</p>
@@ -660,6 +714,7 @@ adIntervalSeconds=Math.max(2,Number(d.adIntervalSeconds)||5);
 if(Array.isArray(d.regions)&&d.regions.length)REGIONS=d.regions.map(r=>String(r).trim()).filter(Boolean);
 if(d.features&&typeof d.features==="object")FEATURES={...FEATURES,...d.features};
 TEMPLATES=Array.isArray(d.templates)?d.templates.filter(t=>t&&t.name&&Array.isArray(t.numbers)):[];
+if(d.proPage&&typeof d.proPage==="object")PRO_PAGE={...PRO_PAGE,...d.proPage};
 }
 }catch(e){console.warn("Settings load failed:",e);}
 renderHero();renderAd();
@@ -722,12 +777,14 @@ $("adminContent").innerHTML=`<div class="admin-panel">
 <div><button class="btn btn-primary" id="saveSiteSettingsBtn">Save appearance</button></div><div id="siteSettingsNotice"></div>
 </div></div>
 ${featuresCardHtml()}
+${proPageCardHtml()}
 ${codesCardHtml()}
 <div class="admin-list">${list.map(e=>`<div class="admin-row"><div class="meta"><div class="admin-number">#${exerciseNumber(e)}</div><img src="${escapeHtml(imageList(e)[0]||PLACEHOLDER_IMG)}" alt=""><div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(exerciseRegions(e).join(", "))}</div></div></div><div class="admin-row-actions"><button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button><button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button></div></div>`).join("")||`<div class="empty">No Firestore exercises yet. Add your first one.</div>`}</div></div>`;
 if($("headerIntervalSeconds"))$("headerIntervalSeconds").value=headerIntervalSeconds;if($("adIntervalSeconds"))$("adIntervalSeconds").value=adIntervalSeconds;
 $("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");};
 $("saveSiteSettingsBtn").onclick=saveSiteSettings;
 $("saveFeaturesBtn").onclick=saveFeatures;$("createCodeBtn").onclick=createCode;
+$("saveProPageBtn").onclick=saveProPage;$("previewProPageBtn").onclick=openPro;
 renderCodes();loadCodes();
 document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openExerciseModal(b.dataset.edit));document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteExercise(b.dataset.delete));
 }
@@ -950,7 +1007,7 @@ if(directExerciseNumbers){
 document.body.classList.add("direct-mode");
 switchTab("exerciseTab");
 }
-loadSettings().then(()=>{loadExercises();refreshPro();});homeexTrackVisit();
+loadSettings().then(async()=>{loadExercises();await refreshPro();if(subsOn()&&/^#pro$/i.test(window.location.hash))openPro();});homeexTrackVisit();
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(e=>console.warn("Service worker registration failed",e)));}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();});
