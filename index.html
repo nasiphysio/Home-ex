@@ -144,7 +144,7 @@ body.direct-mode #homeProBanner{display:none!important}
 .plan.best{border:2px solid #f59e0b;background:#fffbeb}
 .plan b{display:block;font-size:15px}.plan .price{font-size:22px;font-weight:800;margin:6px 0;color:#1e3a8a}.plan small{color:#667085;font-size:12px}
 .plan .btn{width:100%;margin-top:10px}
-body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #footerProBtn{display:none!important}
+body.direct-mode #protocolsTabBtn,body.direct-mode .pro-btn,body.direct-mode #footerProBtn{display:none!important}
 </style>
 </head>
 <body>
@@ -161,6 +161,7 @@ body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #f
 
 <div class="tabs-wrap no-print"><div class="tabs">
 <button class="tab active" data-tab="exerciseTab">Exercise</button>
+<button class="tab hidden" data-tab="protocolsTab" id="protocolsTabBtn">Protocols</button>
 <button class="tab" data-tab="sendTab">Send <span id="selectedCount">(0)</span></button>
 </div></div>
 
@@ -182,18 +183,19 @@ body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #f
 <button class="btn" type="button" id="homeProBtn">شوف العروض</button>
 </div>
 
-<div id="templatesSection" class="hidden">
-<div class="section-head"><div><h2>Protocols <span class="pro-tag">PRO</span></h2><p>Ready-made programs with dosage. One tap → ready to send.</p></div></div>
-<div class="proto-filters" id="protoFilters"></div>
-<div class="proto-grid" id="templatesList"></div>
-</div>
-
 <div class="section-head"><div><h2>Body regions</h2><p>Select one or more areas to see suitable home exercises.</p></div><button class="btn btn-outline no-print" id="clearFilters">Clear</button></div>
 <div class="regions" id="regions"></div>
 
 <div id="adSlot" class="ad-slot" style="display:none"></div>
 <div class="section-head"><div><h2>Exercises</h2><p id="exerciseSummary">Loading...</p></div></div>
 <div class="exercise-grid" id="exerciseGrid"></div>
+</section>
+
+<section id="protocolsTab" class="hidden">
+<div class="section-head"><div><h2>Protocols <span class="pro-tag">PRO</span></h2><p>Ready-made programs with dosage. One tap → ready to send.</p></div></div>
+<div id="adSlotProto" class="ad-slot" style="display:none"></div>
+<div class="proto-filters" id="protoFilters"></div>
+<div class="proto-grid" id="templatesList"></div>
 </section>
 
 <section id="sendTab" class="hidden">
@@ -341,7 +343,7 @@ let patientMediaLink=window.location.href.split("#")[0];
 let directExerciseNumbers=null,heroImageLinks=[],adImageLinks=[],heroTimer=null,adTimer=null,headerIntervalSeconds=4,adIntervalSeconds=5;
 const galleryIndex=new Map();
 // Feature flags (settings/main.features). "off" = hidden for everyone, "all" = everyone, "pro" = subscribers + admin.
-let FEATURES={subscriptions:"off",templates:"off",dosage:"off",branding:"off"};
+let FEATURES={subscriptions:"off",templates:"off",dosage:"off",branding:"off",protoAd:"on"};
 let TEMPLATES=[],proActive=false,proInfo=null,codesCache=null;
 // Sales page shown inside the Pro window (settings/main.proPage) — editable from Admin.
 let PRO_PAGE={
@@ -526,7 +528,10 @@ return null;
 const DEFAULT_TEMPLATES=DEFAULT_TEMPLATE_LINES.split("\n").map(parseTemplateLine).filter(Boolean);
 function renderTemplates(){
 const on=featureOn("templates"),locked=featureLocked("templates");
-$("templatesSection").classList.toggle("hidden",!(on||locked)||!TEMPLATES.length);
+const showTab=(on||locked)&&TEMPLATES.length>0;
+$("protocolsTabBtn").classList.toggle("hidden",!showTab);
+if(!showTab&&!$("protocolsTab").classList.contains("hidden"))switchTab("exerciseTab");
+renderAd();
 if(!TEMPLATES.length)return;
 const regions=[...new Set(TEMPLATES.map(t=>t.region).filter(Boolean))];
 if(protoRegion&&!regions.includes(protoRegion))protoRegion="";
@@ -699,8 +704,8 @@ $("featuresNotice").innerHTML=`<div class="notice ok">اتحفظ. التغيير
 }catch(e){$("featuresNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
 }
 function featuresCardHtml(){
-const modes=k=>k==="subscriptions"?[["off","مقفول"],["on","شغال"]]:[["off","مقفول"],["all","للكل مجاناً"],["pro","للمشتركين بس"]];
-const rows=[["subscriptions","نظام الاشتراكات (زرار Pro + تفعيل الأكواد)"],["templates","البروتوكولات الجاهزة"],["dosage","Sets / Reps / Hold لكل تمرين"],["branding","بيانات الأخصائي والعيادة على الـ PDF والواتساب"]];
+const modes=k=>k==="subscriptions"||k==="protoAd"?[["off","مقفول"],["on","شغال"]]:[["off","مقفول"],["all","للكل مجاناً"],["pro","للمشتركين بس"]];
+const rows=[["subscriptions","نظام الاشتراكات (زرار Pro + تفعيل الأكواد)"],["templates","البروتوكولات الجاهزة"],["dosage","Sets / Reps / Hold لكل تمرين"],["branding","بيانات الأخصائي والعيادة على الـ PDF والواتساب"],["protoAd","صورة الإعلان في تاب البروتوكولات"]];
 return`<div class="settings-card"><h3>المزايا (Features)</h3><p>لو كله "مقفول" الموقع بيفضل زي ما هو بالظبط. "للمشتركين بس" محتاجة نظام الاشتراكات يبقى شغال. انت كأدمن بتشوف كل المزايا اللي مش مقفولة.</p>
 ${rows.map(([k,l])=>`<div class="feature-row"><span>${l}</span><select data-feature="${k}">${modes(k).map(([v,t])=>`<option value="${v}" ${FEATURES[k]===v?"selected":""}>${t}</option>`).join("")}</select></div>`).join("")}
 <div class="field" style="margin-top:14px"><label>البروتوكولات (${TEMPLATES.length}) — سطر لكل بروتوكول</label><textarea id="templatesInput" class="settings-textarea" style="min-height:260px;font-family:monospace;font-size:12px" dir="ltr">${escapeHtml(TEMPLATES.map(templateToLine).join("\n"))}</textarea><small style="display:block;margin-top:6px;color:#667085;line-height:1.7">الشكل: <code>الاسم | المنطقة | الوصف | التمارين</code><br>التمارين: رقم التمرين وبعده الجرعة. مثلاً <code>15:3x10h5/2</code> معناها تمرين 15، 3 مجموعات × 10، ثبات 5 ثواني، مرتين في اليوم. و<code>13:x3h30</code> معناها 3 مرات ثبات 30 ثانية. و<code>47</code> لوحده معناها من غير جرعة.<br>لو مسحت كل السطور وحفظت، البروتوكولات الجاهزة الأصلية بترجع.</small></div>
@@ -735,7 +740,7 @@ return`<div class="settings-card"><h3>المشتركين (أكواد Pro)</h3><p
 }
 function switchTab(tabId){
 document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tabId));
-["exerciseTab","sendTab","adminTab"].forEach(id=>$(id).classList.toggle("hidden",id!==tabId));
+["exerciseTab","protocolsTab","sendTab","adminTab"].forEach(id=>$(id).classList.toggle("hidden",id!==tabId));
 if(tabId==="sendTab")renderSend();
 if(tabId==="adminTab")renderAdmin();
 }
@@ -875,11 +880,12 @@ if(heroTimer){clearInterval(heroTimer);heroTimer=null;}
 if(imgs.length>1){let i=0;heroTimer=setInterval(()=>{const slides=[...box.querySelectorAll(".hero-slide")];if(!slides.length)return;slides[i].classList.remove("active");i=(i+1)%slides.length;slides[i].classList.add("active");},Math.max(2,Number(headerIntervalSeconds)||4)*1000);}
 }
 function renderAd(){
-const box=$("adSlot");if(!box)return;
+const boxes=[$("adSlot"),FEATURES.protoAd!=="off"?$("adSlotProto"):null].filter(Boolean);
+const off=$("adSlotProto");if(off&&!boxes.includes(off)){off.style.display="none";off.innerHTML="";}
 const imgs=(adImageLinks||[]).map(x=>({src:driveToImageUrl(x.img),href:x.link?driveToImageUrl(x.link):driveToImageUrl(x.img)})).filter(x=>x.src);
-if(!imgs.length){box.style.display="none";box.innerHTML="";if(adTimer){clearInterval(adTimer);adTimer=null;}return;}
-box.style.display="block";let i=0;
-const paint=()=>{box.innerHTML=`<div class="ad-label">Ad</div><a href="${escapeHtml(imgs[i].href)}" target="_blank" rel="noopener" aria-label="Advertisement"><img src="${escapeHtml(imgs[i].src)}" alt="Advertisement" onerror="this.style.display='none'"></a>`;};
+if(!imgs.length){boxes.forEach(b=>{b.style.display="none";b.innerHTML="";});if(adTimer){clearInterval(adTimer);adTimer=null;}return;}
+boxes.forEach(b=>b.style.display="block");let i=0;
+const paint=()=>{const html=`<div class="ad-label">Ad</div><a href="${escapeHtml(imgs[i].href)}" target="_blank" rel="noopener" aria-label="Advertisement"><img src="${escapeHtml(imgs[i].src)}" alt="Advertisement" onerror="this.style.display='none'"></a>`;boxes.forEach(b=>b.innerHTML=html);};
 paint();if(adTimer){clearInterval(adTimer);adTimer=null;}if(imgs.length>1){adTimer=setInterval(()=>{i=(i+1)%imgs.length;paint();},Math.max(2,Number(adIntervalSeconds)||5)*1000);}
 }
 function renderAdmin(){
