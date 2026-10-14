@@ -107,6 +107,10 @@ body.direct-mode .direct-only{display:block}
 .pill.ok{background:#dcfce7;color:#166534}.pill.bad{background:#fee2e2;color:#991b1b}.pill.wait{background:#e0e7ff;color:#3730a3}
 .feature-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f2f4f7;flex-wrap:wrap}
 .feature-row select{border:1px solid #d0d5dd;border-radius:9px;padding:8px}
+.home-pro{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:18px 0 6px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;box-shadow:var(--shadow)}
+.home-pro-title{font-size:18px;font-weight:800;margin-bottom:4px}.home-pro-text{font-size:13px;color:#dbeafe;line-height:1.6}
+.home-pro .btn{background:#f59e0b;color:#fff;white-space:nowrap}
+body.direct-mode #homeProBanner{display:none!important}
 .offer-sub{color:#667085;margin:4px 0 12px;font-size:14px}
 .offer-list{list-style:none;padding:0;margin:0 0 16px;display:grid;gap:7px}
 .offer-list li{font-size:14px;line-height:1.5}
@@ -145,6 +149,12 @@ body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #f
 <button class="btn btn-outline" id="clearSearchBtn">Clear</button>
 </div>
 <div class="search-help">Write exercise numbers separated by commas or spaces. The results will appear in number order.</div>
+</div>
+
+<div id="homeProBanner" class="home-pro hidden" dir="rtl">
+<div><div class="home-pro-title">⭐ جديد: HomeEx Pro</div>
+<div class="home-pro-text">اكتب Sets و Reps لكل تمرين • اسم عيادتك ورقمك على الـ PDF • بروتوكولات جاهزة بضغطة واحدة</div></div>
+<button class="btn" type="button" id="homeProBtn">شوف العروض</button>
 </div>
 
 <div id="templatesSection" class="hidden">
@@ -416,6 +426,7 @@ $("proOpenBtn").classList.toggle("hidden",!showPro);
 $("footerProBtn").classList.toggle("hidden",!showPro);
 $("footerProSep").classList.toggle("hidden",!showPro);
 $("proOpenBtn").textContent=proActive?"⭐ Pro ✓":"⭐ Pro";
+$("homeProBanner").classList.toggle("hidden",!showPro||proActive);
 $("proBanner").classList.toggle("hidden",!["dosage","branding","templates"].some(featureLocked));
 $("brandBox").classList.toggle("hidden",!featureOn("branding"));
 renderBrandSummary();renderTemplates();renderSend();
@@ -973,7 +984,7 @@ const u=new URL(window.location.href);
 u.search="";u.hash="";
 window.location.href=u.href;
 };
-$("proOpenBtn").onclick=openPro;$("footerProBtn").onclick=openPro;$("bannerProBtn").onclick=openPro;$("proActivateBtn").onclick=activatePro;
+$("proOpenBtn").onclick=openPro;$("homeProBtn").onclick=openPro;$("footerProBtn").onclick=openPro;$("bannerProBtn").onclick=openPro;$("proActivateBtn").onclick=activatePro;
 $("proCodeInput").addEventListener("keydown",e=>{if(e.key==="Enter")activatePro();});
 $("brandToggleBtn").onclick=()=>{const b=getBrand();$("brandName").value=b.name||"";$("brandClinic").value=b.clinic||"";$("brandPhone").value=b.phone||"";$("brandLogo").value=b.logo||"";$("brandForm").classList.toggle("hidden");};
 $("brandSaveBtn").onclick=()=>{lsSet(BRAND_KEY,JSON.stringify({name:$("brandName").value.trim(),clinic:$("brandClinic").value.trim(),phone:$("brandPhone").value.trim(),logo:$("brandLogo").value.trim()}));$("brandForm").classList.add("hidden");renderBrandSummary();};
