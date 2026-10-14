@@ -86,7 +86,8 @@ body.direct-mode .direct-only{display:block}
 </style>
 <style id="homeex-pro">
 /* Pro / subscriptions / feature flags */
-.pro-btn{background:linear-gradient(135deg,#f59e0b,#d97706);border:0;color:#fff;padding:10px 15px;border-radius:12px;font-weight:800}
+.pro-btn{background:linear-gradient(135deg,#f59e0b,#d97706);border:0;color:#fff;padding:10px 15px;border-radius:12px;font-weight:800;white-space:nowrap}
+body.has-viewas{padding-bottom:70px}
 .templates{display:flex;flex-wrap:wrap;gap:10px}
 .template-chip{border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;padding:10px 14px;border-radius:999px;font-weight:700}
 .template-chip.locked{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
@@ -107,6 +108,30 @@ body.direct-mode .direct-only{display:block}
 .pill.ok{background:#dcfce7;color:#166534}.pill.bad{background:#fee2e2;color:#991b1b}.pill.wait{background:#e0e7ff;color:#3730a3}
 .feature-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f2f4f7;flex-wrap:wrap}
 .feature-row select{border:1px solid #d0d5dd;border-radius:9px;padding:8px}
+.pro-tag{display:inline-block;vertical-align:middle;font-size:11px;font-weight:800;letter-spacing:.5px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;padding:3px 8px;border-radius:999px;margin-left:6px}
+.proto-filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:thin}
+.proto-filter{flex:0 0 auto;border:1px solid var(--border);background:#fff;padding:8px 13px;border-radius:999px;font-weight:700;font-size:13px;color:#344054}
+.proto-filter.active{background:#111827;color:#fff;border-color:#111827}
+.proto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:8px}
+.proto-card{position:relative;text-align:left;background:#fff;border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 5px 18px rgba(16,24,40,.05);display:flex;flex-direction:column;gap:9px;transition:transform .15s,box-shadow .15s}
+.proto-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.proto-top{display:flex;align-items:center;gap:10px}
+.proto-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;background:#eff6ff;flex:0 0 auto}
+.proto-name{font-weight:800;font-size:16px;line-height:1.3}
+.proto-region{font-size:12px;color:var(--muted);font-weight:600}
+.proto-desc{font-size:13px;color:#475467;line-height:1.6;margin:0}
+.proto-meta{display:flex;flex-wrap:wrap;gap:6px}
+.proto-meta span{font-size:11px;font-weight:700;background:#f2f4f7;color:#344054;padding:4px 8px;border-radius:999px}
+.proto-ex{font-size:12px;color:var(--muted);line-height:1.5}
+.proto-card .btn{margin-top:auto}
+.proto-card.locked .proto-desc,.proto-card.locked .proto-ex{filter:blur(3px);user-select:none}
+.proto-card.locked .proto-top{padding-right:58px}
+.proto-lock{position:absolute;top:12px;right:12px;font-size:11px;font-weight:800;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;padding:3px 8px;border-radius:999px}
+.viewas{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:90;background:#111827;color:#fff;border-radius:999px;padding:6px;display:flex;gap:4px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:12px}
+.viewas span{padding:0 8px;color:#cbd5e1;font-weight:700}
+.viewas button{border:0;border-radius:999px;padding:8px 12px;background:transparent;color:#e5e7eb;font-weight:700;font-size:12px}
+.viewas button.active{background:#f59e0b;color:#fff}
+.toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:120;background:#059669;color:#fff;padding:11px 16px;border-radius:12px;font-weight:700;box-shadow:var(--shadow);font-size:14px}
 .home-pro{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:18px 0 6px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;box-shadow:var(--shadow)}
 .home-pro-title{font-size:18px;font-weight:800;margin-bottom:4px}.home-pro-text{font-size:13px;color:#dbeafe;line-height:1.6}
 .home-pro .btn{background:#f59e0b;color:#fff;white-space:nowrap}
@@ -158,8 +183,9 @@ body.direct-mode #templatesSection,body.direct-mode .pro-btn,body.direct-mode #f
 </div>
 
 <div id="templatesSection" class="hidden">
-<div class="section-head"><div><h2>Protocols</h2><p>Ready-made programs. One tap selects all their exercises.</p></div></div>
-<div class="templates" id="templatesList"></div>
+<div class="section-head"><div><h2>Protocols <span class="pro-tag">PRO</span></h2><p>Ready-made programs with dosage. One tap → ready to send.</p></div></div>
+<div class="proto-filters" id="protoFilters"></div>
+<div class="proto-grid" id="templatesList"></div>
 </div>
 
 <div class="section-head"><div><h2>Body regions</h2><p>Select one or more areas to see suitable home exercises.</p></div><button class="btn btn-outline no-print" id="clearFilters">Clear</button></div>
@@ -415,7 +441,11 @@ return p.join(" • ");
 /* ---------- Pro: feature flags, subscription codes, branding, templates ---------- */
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}
-function featureOn(k){const m=FEATURES[k]||"off";if(m==="off")return false;if(m==="all")return true;return isAdmin||proActive;}
+// Admin can preview the site as a subscriber ("pro") or as a free user ("free").
+const VIEW_KEY="homeex_admin_view";
+function adminView(){try{return sessionStorage.getItem(VIEW_KEY)||"pro";}catch(e){return"pro";}}
+function hasPro(){return isAdmin?adminView()!=="free":proActive;}
+function featureOn(k){const m=FEATURES[k]||"off";if(m==="off")return false;if(m==="all")return true;return hasPro();}
 function featureLocked(k){return FEATURES[k]==="pro"&&FEATURES.subscriptions==="on"&&!featureOn(k);}
 function subsOn(){return FEATURES.subscriptions==="on";}
 function fmtDate(ms){return ms?new Date(ms).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"—";}
@@ -425,8 +455,9 @@ const showPro=subsOn();
 $("proOpenBtn").classList.toggle("hidden",!showPro);
 $("footerProBtn").classList.toggle("hidden",!showPro);
 $("footerProSep").classList.toggle("hidden",!showPro);
-$("proOpenBtn").textContent=proActive?"⭐ Pro ✓":"⭐ Pro";
-$("homeProBanner").classList.toggle("hidden",!showPro||proActive);
+$("proOpenBtn").textContent=hasPro()?"⭐ Pro ✓":"⭐ Pro";
+$("homeProBanner").classList.toggle("hidden",!showPro||hasPro());
+renderViewAs();
 $("proBanner").classList.toggle("hidden",!["dosage","branding","templates"].some(featureLocked));
 $("brandBox").classList.toggle("hidden",!featureOn("branding"));
 renderBrandSummary();renderTemplates();renderSend();
@@ -435,18 +466,96 @@ function renderBrandSummary(){
 const b=getBrand();
 $("brandSummary").textContent=[b.name,b.clinic,b.phone].filter(Boolean).join(" • ")||"Add your name, clinic and phone. They will appear on the PDF and the WhatsApp message.";
 }
+function renderViewAs(){
+let bar=$("viewAsBar");
+if(!isAdmin||!subsOn()){if(bar)bar.remove();document.body.classList.remove("has-viewas");return;}
+document.body.classList.add("has-viewas");
+if(!bar){bar=document.createElement("div");bar.id="viewAsBar";bar.className="viewas no-print";document.body.appendChild(bar);}
+const v=adminView();
+bar.innerHTML=`<span>👁 عرض كـ</span><button data-view="pro" class="${v==="pro"?"active":""}">مشترك</button><button data-view="free" class="${v==="free"?"active":""}">مستخدم عادي</button>`;
+bar.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{try{sessionStorage.setItem(VIEW_KEY,b.dataset.view);}catch(e){}applyFeatures();});
+}
+
+/* Protocols. Line format (also used in Admin):
+   Name | Region | Description | 15:3x10h5/2, 11:3x10, 13:x3h30
+   per exercise → number:SETSxREPS hHOLD /TIMES-PER-DAY (all optional; "x3" = reps only) */
+const DEFAULT_TEMPLATE_LINES=`Acute low back pain | Lower Back | أول أيام ألم أسفل الظهر: حركة لطيفة وتنفس لتقليل التقلص | 88:2x10h5/3, 89:2x10/3, 5:x3h20/3, 61:x3h20/2, 112:x10/3
+Chronic low back pain – core stability | Lower Back | تقوية العضلات العميقة للجذع لألم الظهر المزمن | 8:3x10h10, 91:2x10, 1:3x12h3, 59:3x8h5, 90:3x8, 2:x3h20, 24:3x12
+Disc – extension bias (McKenzie) | Lower Back | للانزلاق الغضروفي اللي بيتحسن مع فرد الظهر | 16:x10h2/5, 19:2x10h3, 85:2x10, 8:3x10h10, 1:3x10h3, 31:x3h30/2
+Sciatica & piriformis | Lower Back | ألم العصب الوركي وعضلة الكمثرية: إطالة وتنشيط الأرداف | 13:x3h30/2, 12:x3h30/2, 5:x3h20/2, 88:2x10h5, 24:3x12, 1:3x12h3
+Neck pain & forward head posture | Neck | ألم الرقبة وتقدم الرأس من الموبايل والمكتب | 63:3x10h5/3, 66:3x10h10, 70:3x10h5/2, 86:3x12, 48:x3h30/2, 49:x3h30/2, 84:2x10
+Stiff neck – mobility | Neck | تيبس الرقبة: استعادة الحركة بالتدريج | 64:2x10/3, 65:2x10/3, 63:2x10h5/3, 50:x5h5/2, 48:x3h30/2
+Frozen shoulder – stiffness phase | Shoulder | الكتف المتجمد: استعادة مدى الحركة | 34:x20/3, 67:3x10h5/2, 68:3x10h5/2, 69:3x10/2, 71:x3h30/2, 27:x3h30/2
+Rotator cuff & impingement | Shoulder | آلام أوتار الكتف: تقوية الكفة المدورة ولوح الكتف | 70:3x10h5, 36:3x15, 37:3x15, 14:3x12, 21:3x10h3, 22:3x10h3, 39:3x12, 71:x3h30
+Scapular stability & posture | Upper Back | ثبات لوح الكتف وتصحيح القوام (Upper crossed) | 20:3x10h3, 21:3x10h3, 22:3x10h3, 26:3x10, 40:3x10, 86:3x12, 38:3x10, 56:x3h30/2
+Tennis elbow | Elbow & Wrist | التهاب الوتر الخارجي للكوع: Eccentric وإطالة | 43:x3h30/3, 74:3x15, 73:2x15, 79:3x10h5
+Golfer's elbow | Elbow & Wrist | التهاب الوتر الداخلي للكوع | 42:x3h30/3, 83:x3h30/2, 76:2x15, 73:2x15, 79:3x10h5
+De Quervain's | Elbow & Wrist | التهاب أوتار الإبهام | 41:x3h20/2, 81:2x10, 77:2x10, 82:2x10h3
+Wrist & hand stiffness (after cast) | Elbow & Wrist | تيبس الرسغ واليد بعد فك الجبس | 76:2x15/3, 77:2x15/3, 73:2x15/3, 78:2x5/3, 79:3x10h5, 81:2x10, 80:2x10
+Hip osteoarthritis | Hip | خشونة مفصل الفخذ: حركة وتقوية عضلات الحوض | 97:2x10, 23:3x10, 24:3x12, 92:3x10, 1:3x12h3, 94:3x8, 31:x3h30/2
+Knee osteoarthritis | Knee | خشونة الركبة: تقوية العضلة الأمامية والحوض | 15:3x10h5/2, 11:3x10, 95:3x10h3, 96:3x10, 10:3x10h5, 23:3x10, 94:3x8, 30:2x15
+Knee post-op – early phase | Knee | بعد عمليات الركبة (TKR / ACL) – المرحلة الأولى حسب تعليمات الجراح | 47:3x20/6, 15:3x10h5/3, 97:3x10/3, 11:3x10/2, 95:3x10h3/2, 10:3x10h5/2
+Patellofemoral pain | Knee | ألم مقدمة الركبة (الصابونة): تقوية الحوض والفخذ | 23:3x12, 24:3x15, 1:3x12h3, 92:3x10, 98:3x15, 28:3x10, 29:3x10, 31:x3h30
+Ankle sprain rehab | Ankle / Foot | التواء الكاحل: حركة ثم تقوية ثم توازن | 47:3x20/3, 99:x2/2, 44:3x15, 45:3x15, 46:3x15, 30:3x12, 102:x3h30, 62:x3h30
+Plantar fasciitis | Ankle / Foot | التهاب اللفافة الأخمصية (شوكة القدم) | 103:x3h30/3, 100:x3h30/2, 32:x3h30/2, 101:3x10, 30:3x12
+Falls prevention (elderly) | Balance | الوقاية من الوقوع لكبار السن: تقوية وتوازن | 94:3x8, 105:2x20, 106:2x10, 107:2x10, 93:2x10, 62:x3h20, 104:x3, 102:x3h15
+TMJ dysfunction | TMJ | آلام مفصل الفك (برنامج Rocabado المبسّط) | 108:x6h6/6, 109:x6/6, 110:2x10, 111:x6h3/3, 63:x6h5/3
+Breathing & airway clearance | Breathing | تمارين التنفس وطرد البلغم (أمراض الصدر وبعد الكورونا) | 112:x10/3, 113:x10/3, 114:x10/3, 115:x3/3
+Pelvic floor – stress incontinence | woman health | تقوية قاع الحوض لسلس البول وبعد الولادة | 116:3x10h10/3, 117:3x10/3, 118:x5, 8:3x10h10, 112:x10`;
+const REGION_ICONS={"Shoulder":"💪","Elbow & Wrist":"✋","Neck":"🧣","Upper Back":"🧍","Lower Back":"🔙","Hip":"🦴","Knee":"🦵","Ankle / Foot":"🦶","Core":"🎯","Balance":"⚖️","TMJ":"😬","Aqua therapy":"🏊","woman health":"🌸","Breathing":"🫁"};
+let protoRegion="";
+function parseTemplateLine(line){
+const parts=line.split("|").map(s=>s.trim());
+let name,region="",desc="",spec;
+if(parts.length>=4)[name,region,desc,spec]=parts;else[name,spec]=parts;
+const items=String(spec||"").split(/[,;]+/).map(s=>s.trim()).filter(Boolean).map(tok=>{
+const m=tok.match(/^(\d+)(?::\s*(?:(\d+)?x(\d+))?\s*(?:h(\d+))?\s*(?:\/(\d+))?)?$/i);
+return m?{n:Number(m[1]),sets:m[2]||"",reps:m[3]||"",hold:m[4]||"",freq:m[5]||""}:null;}).filter(Boolean);
+return name&&items.length?{name,region,desc,items}:null;
+}
+function templateToLine(t){
+const spec=t.items.map(i=>{let d=(i.reps?`${i.sets||""}x${i.reps}`:"")+(i.hold?`h${i.hold}`:"")+(i.freq?`/${i.freq}`:"");return d?`${i.n}:${d}`:String(i.n);}).join(", ");
+return t.region||t.desc?`${t.name} | ${t.region||""} | ${t.desc||""} | ${spec}`:`${t.name} | ${spec}`;
+}
+function normalizeTemplate(t){
+if(!t||!t.name)return null;
+if(Array.isArray(t.items))return{name:t.name,region:t.region||"",desc:t.desc||"",items:t.items.filter(i=>i&&i.n)};
+if(Array.isArray(t.numbers))return{name:t.name,region:"",desc:"",items:t.numbers.map(n=>({n:Number(n)}))};
+return null;
+}
+const DEFAULT_TEMPLATES=DEFAULT_TEMPLATE_LINES.split("\n").map(parseTemplateLine).filter(Boolean);
 function renderTemplates(){
 const on=featureOn("templates"),locked=featureLocked("templates");
 $("templatesSection").classList.toggle("hidden",!(on||locked)||!TEMPLATES.length);
-if(locked){$("templatesList").innerHTML=`<button class="template-chip locked" id="tplLockedBtn">🔒 ${TEMPLATES.length} protocols — Pro</button>`;$("tplLockedBtn").onclick=openPro;return;}
-$("templatesList").innerHTML=TEMPLATES.map((t,i)=>`<button class="template-chip" data-tpl="${i}">${escapeHtml(t.name)}</button>`).join("");
-document.querySelectorAll("[data-tpl]").forEach(b=>b.onclick=()=>applyTemplate(TEMPLATES[Number(b.dataset.tpl)]));
+if(!TEMPLATES.length)return;
+const regions=[...new Set(TEMPLATES.map(t=>t.region).filter(Boolean))];
+if(protoRegion&&!regions.includes(protoRegion))protoRegion="";
+$("protoFilters").innerHTML=regions.length>1?[["","All"],...regions.map(r=>[r,`${REGION_ICONS[r]||"•"} ${r}`])].map(([v,l])=>`<button class="proto-filter ${protoRegion===v?"active":""}" data-proto-region="${escapeHtml(v)}">${escapeHtml(l)}</button>`).join(""):"";
+document.querySelectorAll("[data-proto-region]").forEach(b=>b.onclick=()=>{protoRegion=b.dataset.protoRegion;renderTemplates();});
+const byNum=new Map(exercises.map(e=>[exerciseNumber(e),e]));
+$("templatesList").innerHTML=TEMPLATES.map((t,i)=>({t,i})).filter(({t})=>!protoRegion||t.region===protoRegion).map(({t,i})=>{
+const names=t.items.map(it=>byNum.get(it.n)?.name).filter(Boolean);
+const daily=Math.max(0,...t.items.map(it=>Number(it.freq)||1));
+return`<div class="proto-card ${locked?"locked":""}">
+${locked?`<span class="proto-lock">🔒 Pro</span>`:""}
+<div class="proto-top"><div class="proto-icon">${REGION_ICONS[t.region]||"📋"}</div><div><div class="proto-name">${escapeHtml(t.name)}</div>${t.region?`<div class="proto-region">${escapeHtml(t.region)}</div>`:""}</div></div>
+${t.desc?`<p class="proto-desc" dir="rtl">${escapeHtml(t.desc)}</p>`:""}
+<div class="proto-meta"><span>${t.items.length} exercises</span>${t.items.some(it=>it.reps||it.hold)?`<span>Dosage included</span>`:""}${daily>1?`<span>up to ${daily}×/day</span>`:""}</div>
+<div class="proto-ex">${escapeHtml(names.slice(0,4).join(" • "))}${names.length>4?` +${names.length-4}`:""}</div>
+<button class="btn ${locked?"btn-outline":"btn-primary"}" data-tpl="${i}">${locked?"Unlock with Pro":"Use protocol →"}</button>
+</div>`;}).join("");
+document.querySelectorAll("[data-tpl]").forEach(b=>b.onclick=()=>locked?openPro():applyTemplate(TEMPLATES[Number(b.dataset.tpl)]));
 }
+function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
 function applyTemplate(t){
-const nums=new Set(t.numbers.map(Number));
-exercises.filter(e=>nums.has(exerciseNumber(e))).forEach(e=>selectedIds.add(e.id));
-$("exerciseSearch").value=[...nums].join(", ");searchNumbers=nums;
-renderExercises();renderSend();
+const byNum=new Map(exercises.map(e=>[exerciseNumber(e),e]));
+selectedIds.clear();
+let count=0;
+t.items.forEach(it=>{const e=byNum.get(it.n);if(!e)return;selectedIds.add(e.id);count++;
+dosage.set(e.id,{sets:it.sets||"",reps:it.reps||"",hold:it.hold||"",freq:it.freq||""});});
+searchNumbers=null;$("exerciseSearch").value="";
+renderExercises();switchTab("sendTab");window.scrollTo({top:0,behavior:"smooth"});
+toast(`✓ ${t.name}: ${count} exercises ready`);
 }
 function proStatusHtml(){
 if(proActive)return`<div class="pro-status ok" dir="rtl">✅ اشتراك Pro شغال على الجهاز ده.<br>المشترك: <b>${escapeHtml(proInfo.name||"—")}</b><br>صالح حتى: <b>${fmtDate(proInfo.expiresAt)}</b> (فاضل ${Math.max(0,Math.ceil((proInfo.expiresAt-Date.now())/864e5))} يوم)</div>`;
@@ -582,10 +691,10 @@ await loadCodes();
 }
 async function saveFeatures(){
 const f={};document.querySelectorAll("[data-feature]").forEach(s=>f[s.dataset.feature]=s.value);
-const tpl=parseLines($("templatesInput").value).map(line=>{const[name,nums]=line.split("|").map(s=>s.trim());return{name,numbers:String(nums||"").split(/[\s,;]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0)};}).filter(t=>t.name&&t.numbers.length);
+const tpl=parseLines($("templatesInput").value).map(parseTemplateLine).filter(Boolean);
 try{
 await setDoc(doc(db,"settings","main"),{features:f,templates:tpl,updatedAt:serverTimestamp()},{merge:true});
-FEATURES={...FEATURES,...f};TEMPLATES=tpl;await refreshPro();
+FEATURES={...FEATURES,...f};TEMPLATES=tpl.length?tpl:DEFAULT_TEMPLATES;await refreshPro();
 $("featuresNotice").innerHTML=`<div class="notice ok">اتحفظ. التغيير وصل لكل المستخدمين.</div>`;
 }catch(e){$("featuresNotice").innerHTML=`<div class="notice error">${escapeHtml(e.message)}</div>`;}
 }
@@ -594,7 +703,7 @@ const modes=k=>k==="subscriptions"?[["off","مقفول"],["on","شغال"]]:[["o
 const rows=[["subscriptions","نظام الاشتراكات (زرار Pro + تفعيل الأكواد)"],["templates","البروتوكولات الجاهزة"],["dosage","Sets / Reps / Hold لكل تمرين"],["branding","بيانات الأخصائي والعيادة على الـ PDF والواتساب"]];
 return`<div class="settings-card"><h3>المزايا (Features)</h3><p>لو كله "مقفول" الموقع بيفضل زي ما هو بالظبط. "للمشتركين بس" محتاجة نظام الاشتراكات يبقى شغال. انت كأدمن بتشوف كل المزايا اللي مش مقفولة.</p>
 ${rows.map(([k,l])=>`<div class="feature-row"><span>${l}</span><select data-feature="${k}">${modes(k).map(([v,t])=>`<option value="${v}" ${FEATURES[k]===v?"selected":""}>${t}</option>`).join("")}</select></div>`).join("")}
-<div class="field" style="margin-top:14px"><label>البروتوكولات — سطر لكل بروتوكول: الاسم | أرقام التمارين</label><textarea id="templatesInput" class="settings-textarea" placeholder="Frozen shoulder | 1, 4, 7&#10;Low back pain | 3, 12, 15">${escapeHtml(TEMPLATES.map(t=>`${t.name} | ${t.numbers.join(", ")}`).join("\n"))}</textarea></div>
+<div class="field" style="margin-top:14px"><label>البروتوكولات (${TEMPLATES.length}) — سطر لكل بروتوكول</label><textarea id="templatesInput" class="settings-textarea" style="min-height:260px;font-family:monospace;font-size:12px" dir="ltr">${escapeHtml(TEMPLATES.map(templateToLine).join("\n"))}</textarea><small style="display:block;margin-top:6px;color:#667085;line-height:1.7">الشكل: <code>الاسم | المنطقة | الوصف | التمارين</code><br>التمارين: رقم التمرين وبعده الجرعة. مثلاً <code>15:3x10h5/2</code> معناها تمرين 15، 3 مجموعات × 10، ثبات 5 ثواني، مرتين في اليوم. و<code>13:x3h30</code> معناها 3 مرات ثبات 30 ثانية. و<code>47</code> لوحده معناها من غير جرعة.<br>لو مسحت كل السطور وحفظت، البروتوكولات الجاهزة الأصلية بترجع.</small></div>
 <div style="margin-top:12px"><button class="btn btn-primary" id="saveFeaturesBtn">حفظ المزايا</button></div><div id="featuresNotice"></div></div>`;
 }
 function proPageCardHtml(){
@@ -657,7 +766,7 @@ const snap=await getDocs(collection(db,"exercises"));
 exercises=snap.docs.map(d=>({id:d.id,...d.data()}));
 }catch(e){exercises=[];$("exerciseSummary").textContent="Could not load exercises from Firestore.";console.error("Firestore exercises load failed:",e);}
 }
-clearTimeout(loadingTimer);exercises=sortedExercises(exercises);renderRegions();renderExercises();renderSend();
+clearTimeout(loadingTimer);exercises=sortedExercises(exercises);renderRegions();renderExercises();renderSend();renderTemplates();
 }
 async function checkAdmin(user){
 adminCheckError="";
@@ -724,7 +833,8 @@ headerIntervalSeconds=Math.max(2,Number(d.headerIntervalSeconds)||4);
 adIntervalSeconds=Math.max(2,Number(d.adIntervalSeconds)||5);
 if(Array.isArray(d.regions)&&d.regions.length)REGIONS=d.regions.map(r=>String(r).trim()).filter(Boolean);
 if(d.features&&typeof d.features==="object")FEATURES={...FEATURES,...d.features};
-TEMPLATES=Array.isArray(d.templates)?d.templates.filter(t=>t&&t.name&&Array.isArray(t.numbers)):[];
+const tl=Array.isArray(d.templates)?d.templates.map(normalizeTemplate).filter(Boolean):[];
+TEMPLATES=tl.length?tl:DEFAULT_TEMPLATES;
 if(d.proPage&&typeof d.proPage==="object")PRO_PAGE={...PRO_PAGE,...d.proPage};
 }
 }catch(e){console.warn("Settings load failed:",e);}
@@ -792,7 +902,7 @@ ${proPageCardHtml()}
 ${codesCardHtml()}
 <div class="admin-list">${list.map(e=>`<div class="admin-row"><div class="meta"><div class="admin-number">#${exerciseNumber(e)}</div><img src="${escapeHtml(imageList(e)[0]||PLACEHOLDER_IMG)}" alt=""><div><strong>${escapeHtml(e.name)}</strong><div style="font-size:12px;color:#667085">${escapeHtml(exerciseRegions(e).join(", "))}</div></div></div><div class="admin-row-actions"><button class="btn btn-outline" data-edit="${escapeHtml(e.id)}">Edit</button><button class="btn btn-danger" data-delete="${escapeHtml(e.id)}">Delete</button></div></div>`).join("")||`<div class="empty">No Firestore exercises yet. Add your first one.</div>`}</div></div>`;
 if($("headerIntervalSeconds"))$("headerIntervalSeconds").value=headerIntervalSeconds;if($("adIntervalSeconds"))$("adIntervalSeconds").value=adIntervalSeconds;
-$("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");};
+$("addExerciseBtn").onclick=()=>openExerciseModal();$("logoutBtn").onclick=async()=>{await signOut(auth);currentUser=null;isAdmin=false;switchTab("exerciseTab");applyFeatures();};
 $("saveSiteSettingsBtn").onclick=saveSiteSettings;
 $("saveFeaturesBtn").onclick=saveFeatures;$("createCodeBtn").onclick=createCode;
 $("saveProPageBtn").onclick=saveProPage;$("previewProPageBtn").onclick=openPro;
